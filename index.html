@@ -75,27 +75,24 @@
             transform: rotateY(180deg);
         }
 
-        /* FNF Style Vertical Scrolling Text - Entry from below + seamless loop (V0.78 FIX) */
+        /* FNF Style Vertical Scrolling Text Animation - Seamless 24s Slow Loop */
         .fnf-scroll-text {
+            animation: fnfScrollUpSlow 24s linear infinite;
             text-shadow: 0 0 10px #ffffff, 
                          0 0 20px #ffffff, 
                          0 0 35px var(--brand-custom, #10b981), 
                          0 0 50px var(--brand-custom, #10b981), 
                          0 4px 12px rgba(0, 0, 0, 0.9);
-            will-change: transform;
         }
-        @keyframes fnfEnterFromBelow {
-            0% { transform: translateY(100vh); }
-            100% { transform: translateY(0); }
-        }
-        @keyframes fnfScrollLoop {
-            0% { transform: translateY(0); }
-            100% { transform: translateY(-50%); }
-        }
-        @keyframes fnfScrollUpSlow {
-            0% { transform: translateY(0); }
-            100% { transform: translateY(-50%); }
-        }
+
+@keyframes fnfScrollUpSlow {
+    0% {
+        transform: translateY(100vh);
+    }
+    100% {
+        transform: translateY(calc(100vh - 50%));
+    }
+}
 
         /* Better contrast for small / secondary text */
         .text-slate-400 {
@@ -110,7 +107,18 @@
         .dark .text-slate-500 {
             color: #cbd5e1;
         }
-    </style>
+    
+        .sf-question-scroll { max-height: 180px; overflow-y: auto; padding-right: 6px; scrollbar-width: thin; }
+        .sf-question-scroll::-webkit-scrollbar { width: 6px; }
+        .sf-question-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 999px; }
+        .sf-tip-blur { filter: blur(8px); user-select: none; transition: filter .3s; }
+        .sf-tip-blur.revealed { filter: none; }
+        /* Health Reminder */
+        #healthReminderOverlay { background: #000; }
+        #healthReminderOverlay h2 { color: #ef4444; }
+        #healthReminderOverlay p, #healthReminderOverlay div { color: #fff; }
+        #studyLockOverlay { background: rgba(0,0,0,0.85); }
+</style>
 </head>
 <body id="bodyRoot" class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 min-h-screen font-sans pb-20 md:pb-0 relative overflow-x-hidden">
 
@@ -257,7 +265,7 @@
                 </div>
                 <div class="hidden sm:flex flex-col">
                     <span class="font-extrabold text-base tracking-wide">StudyForge <span class="text-brand-500 text-xs px-2 py-0.5 bg-brand-500/10 rounded-full">AI</span></span>
-                    <span class="text-[10px] font-semibold text-slate-400 -mt-0.5">V. 0.78</span>
+                    <span class="text-[10px] font-semibold text-slate-400 -mt-0.5">V. 0.75</span>
                 </div>
             </div>
             <div class="flex items-center space-x-2 sm:space-x-3">
@@ -364,15 +372,17 @@
                         <div class="lg:col-span-2 glass-panel p-5 sm:p-6 rounded-3xl shadow-xl space-y-3">
                             <div>
                                 <h3 class="font-bold text-sm">Subject Performance Analytics</h3>
-                                <p class="text-[10px] text-slate-400">Average scores for the subjects YOU actually quizzed on — based on your material content, not last question</p>
+                                <p class="text-[10px] text-slate-400">Average scores grouped by broad subject areas</p>
                             </div>
                             <div id="subjectBarChartContainer" class="h-36 sm:h-40 flex items-end justify-between space-x-2 pt-4 px-2 border-b border-slate-200 dark:border-slate-800">
                                 <!-- Injected bars -->
                             </div>
                             <div id="subjectChartLabels" class="flex justify-between text-[10px] font-bold text-slate-400 px-1">
-                                <span>No quiz data yet</span>
+                                <span>English</span>
+                                <span>Mathematics</span>
+                                <span>Physics</span>
+                                <span>Biology</span>
                             </div>
-                            <p id="subjectChartNote" class="text-[10px] text-slate-400">Shows only subjects you actually quizzed on — no hardcoded subjects, no filename as subject. Labels are always in English.</p>
                         </div>
 
                         <!-- Right column: 2 squares + storage rectangle -->
@@ -415,12 +425,23 @@
                         
                         <label class="border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-brand-500 rounded-3xl p-6 sm:p-8 flex flex-col items-center justify-center cursor-pointer transition-all bg-slate-50/50 dark:bg-slate-900/50 text-center">
                             <div class="w-12 h-12 rounded-2xl bg-brand-500/10 text-brand-500 flex items-center justify-center text-lg mb-3 shadow-inner"><i class="fa-solid fa-cloud-arrow-up"></i></div>
-                            <span class="font-bold text-xs mb-1">Click to upload files (.docx, .pdf, .txt, images)</span>
-                            <span class="text-[10px] text-slate-400">Supports DOCX, PDF (text-based), TXT + Image OCR via Gemini • Scanned PDF = upload as image</span>
-                            <input type="file" multiple accept=".docx,.txt,.pdf,image/*" onchange="handleGeneralMaterialUpload(event)" class="hidden">
+                            <span class="font-bold text-xs mb-1">Click to upload files (.docx, .txt, .pdf, .pptx, images)</span>
+                            <span class="text-[10px] text-slate-400">Supports DOCX, TXT, PDF, PPTX + Image OCR via Gemini</span>
+                            <input type="file" multiple accept=".docx,.txt,.pdf,.pptx,image/*" onchange="handleGeneralMaterialUpload(event)" class="hidden">
                         </label>
 
-                        <div>
+                        
+                        <div class="glass-panel p-4 rounded-2xl space-y-3 mt-4">
+                            <h4 class="font-bold text-xs uppercase tracking-widest text-slate-400">YouTube Link (V. 0.79)</h4>
+                            <p class="text-[11px] text-slate-400">Paste a YouTube link, we verify it is YouTube, then send it to Gemini with your prompt.</p>
+                            <div class="flex gap-2">
+                                <input id="ytLinkInput" type="text" placeholder="Paste YouTube link here..." class="flex-1 px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs" />
+                                <button onclick="handleYouTubeLink()" class="px-4 py-2 rounded-xl bg-red-500 text-white text-xs font-bold">Send to Gemini</button>
+                            </div>
+                            <p id="ytLinkStatus" class="text-[11px] text-slate-400"></p>
+                            <div id="ytResult" class="hidden text-xs p-3 rounded-xl bg-slate-50 dark:bg-slate-900 whitespace-pre-wrap max-h-64 overflow-y-auto"></div>
+                        </div>
+<div>
                             <h4 class="font-bold text-xs text-slate-400 uppercase tracking-widest mb-3">IndexedDB Library</h4>
                             <div id="materialListContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <p class="text-xs text-slate-400 col-span-2">No materials uploaded yet.</p>
@@ -442,7 +463,7 @@
                                 <div class="w-12 h-12 rounded-2xl bg-brand-500/10 text-brand-500 flex items-center justify-center text-lg mb-3 shadow-inner"><i class="fa-solid fa-file-arrow-up"></i></div>
                                 <span class="font-bold text-xs mb-1">Upload Homework (.docx, Image, or Document)</span>
                                 <span class="text-[10px] text-slate-400">Math, Physics, Bio, English, or History</span>
-                                <input type="file" accept=".docx,.pdf,image/*,.txt" onchange="handleHomeworkUpload(event)" class="hidden">
+                                <input type="file" accept=".docx,.pdf,.pptx,image/*,.txt" onchange="handleHomeworkUpload(event)" class="hidden">
                             </label>
                         </div>
 
@@ -662,16 +683,6 @@
                                 <p id="quizScorePercentText" class="text-2xl font-black text-brand-500">100%</p>
                             </div>
                             <p id="finalQuizScore" class="text-xs font-semibold text-amber-500">+150 Coins & +250 XP Earned</p>
-                            <button onclick="toggleQuizReview()" id="quizReviewBtn" class="w-full py-3 bg-slate-800 dark:bg-slate-700 hover:bg-slate-900 dark:hover:bg-slate-600 text-white font-bold rounded-2xl text-xs transition-all flex items-center justify-center gap-2"><i class="fa-solid fa-table-list"></i> Review My Answers</button>
-                            <div id="quizReviewContainer" class="hidden text-left space-y-3 mt-2">
-                                <div class="flex items-center justify-between">
-                                    <h4 class="font-bold text-sm">📋 Review — All Questions (First to Last)</h4>
-                                    <button onclick="toggleQuizReview()" class="text-xs font-bold text-slate-400 hover:text-slate-200 px-2 py-1">Hide ✕</button>
-                                </div>
-                                <p class="text-[11px] text-slate-400">Shows YOUR answer and whether it was Correct / Incorrect. Correct answers are NOT shown.</p>
-                                <div id="quizReviewSummary" class="flex gap-2 text-[11px] font-bold"></div>
-                                <div id="quizReviewTable" class="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700"></div>
-                            </div>
                             <button onclick="resetQuiz()" class="w-full py-3 bg-brand-500 hover:bg-brand-600 text-white font-bold rounded-2xl text-xs transition-all">Take Another Quiz</button>
                         </div>
                     </div>
@@ -750,9 +761,20 @@
                             <label class="border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-brand-500 rounded-3xl p-6 flex flex-col items-center justify-center cursor-pointer transition-all bg-slate-50/50 dark:bg-slate-900/50 text-center">
                                 <div class="w-10 h-10 rounded-2xl bg-brand-500/10 text-brand-500 flex items-center justify-center text-lg mb-2"><i class="fa-solid fa-cloud-arrow-up"></i></div>
                                 <span class="font-bold text-xs">Or upload a file (.docx, .txt, image)</span>
-                                <input type="file" id="mindMapFileInput" accept=".docx,.txt,.pdf,image/*" onchange="handleMindMapUpload(event)" class="hidden">
+                                <input type="file" id="mindMapFileInput" accept=".docx,.txt,.pdf,.pptx,image/*" onchange="handleMindMapUpload(event)" class="hidden">
                             </label>
                             <p id="mindMapFileStatus" class="text-[10px] text-slate-400 text-center hidden"></p>
+                            <div class="p-4 rounded-2xl bg-slate-100/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 space-y-2 mt-2">
+                                <h4 class="font-bold text-xs uppercase tracking-widest text-slate-400">YouTube Link — Mind Map</h4>
+                                <p class="text-[11px] text-slate-400">Paste a YouTube link, verify it is YouTube, then send to Gemini to make a mind map.</p>
+                                <div class="flex gap-2">
+                                    <input id="ytLinkInputMindMap" type="text" placeholder="Paste YouTube link here..." class="flex-1 px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs" />
+                                    <button onclick="handleYouTubeLinkMindMap()" class="px-4 py-2 rounded-xl bg-red-500 text-white text-xs font-bold whitespace-nowrap">Send to Gemini → Mind Map</button>
+                                </div>
+                                <p id="ytLinkStatusMindMap" class="text-[11px] text-slate-400"></p>
+                                <div id="ytResultMindMap" class="hidden text-xs p-3 rounded-xl bg-white dark:bg-slate-900 whitespace-pre-wrap max-h-64 overflow-y-auto"></div>
+                            </div>
+
                         </div>
 
                         <button onclick="generateMindMap()" id="mindMapGenerateBtn" class="w-full py-3.5 bg-brand-500 hover:bg-brand-600 text-white font-bold rounded-2xl text-xs shadow-lg shadow-brand-500/20 transition-all">
@@ -853,80 +875,29 @@
                             <p class="text-xs text-slate-400">Complete quests for quick rewards and missions for bigger goals.</p>
                         </div>
 
+                        
+                        
                         <div id="questActiveView" class="space-y-8">
-                            <!-- QUESTS -->
-                            <div class="space-y-4">
-                                <h4 class="font-bold text-xs uppercase tracking-widest text-slate-400">Quests</h4>
-
-                                <div class="p-4 rounded-2xl bg-slate-100/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800">
-                                    <div class="flex justify-between items-start gap-3">
-                                        <div class="flex-1">
-                                            <span class="text-[10px] font-bold text-brand-500 uppercase">Easy</span>
-                                            <p class="font-bold text-sm mt-1">Win 2 Games</p>
-                                            <p class="text-xs text-slate-400 mt-1">Progress: <span id="qEasyProgress">0</span>/2</p>
-                                        </div>
-                                        <div class="text-right text-xs">
-                                            <p class="text-amber-500 font-bold">50 Coins</p>
-                                            <p class="text-brand-500">50 EXP</p>
-                                            <button onclick="claimQuest('easy')" id="claimEasyBtn" class="mt-2 px-3 py-1 bg-brand-500 text-white text-[10px] font-bold rounded-lg hidden">Claim</button>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="p-4 rounded-2xl bg-slate-100/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800">
-                                    <div class="flex justify-between items-start gap-3">
-                                        <div class="flex-1">
-                                            <span class="text-[10px] font-bold text-amber-500 uppercase">Normal</span>
-                                            <p class="font-bold text-sm mt-1">Answer 20 Questions Correctly</p>
-                                            <p class="text-xs text-slate-400 mt-1">Progress: <span id="qNormalProgress">0</span>/20</p>
-                                        </div>
-                                        <div class="text-right text-xs">
-                                            <p class="text-amber-500 font-bold">100 Coins</p>
-                                            <p class="text-brand-500">100 EXP</p>
-                                            <button onclick="claimQuest('normal')" id="claimNormalBtn" class="mt-2 px-3 py-1 bg-brand-500 text-white text-[10px] font-bold rounded-lg hidden">Claim</button>
-                                        </div>
-                                    </div>
-                                </div>
+                            <div id="questCooldownViewV079" class="hidden p-4 rounded-2xl bg-slate-900 text-center">
+                                <p class="font-bold text-sm text-white">All quests & missions done!</p>
+                                <p class="text-xs text-slate-300 mt-1">Cooldown: <span id="questCooldownTimerV079">60:00</span> — new random quests in 1 hour.</p>
+                                <p class="text-[11px] text-slate-400 mt-1">Come back after cooldown for a new random set.</p>
                             </div>
-
-                            <!-- MISSIONS -->
-                            <div class="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-800">
-                                <h4 class="font-bold text-xs uppercase tracking-widest text-slate-400">Missions</h4>
-
-                                <div class="p-4 rounded-2xl bg-slate-100/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800">
-                                    <div class="flex justify-between items-start gap-3">
-                                        <div class="flex-1">
-                                            <span class="text-[10px] font-bold text-purple-500 uppercase">Mission</span>
-                                            <p class="font-bold text-sm mt-1">Win 3 Different Games 3 Times</p>
-                                            <p class="text-xs text-slate-400 mt-1">Progress: <span id="missionDiffProgress">0</span>/3 modes</p>
-                                            <p class="text-[10px] text-slate-500">(3 wins in each of 3 different modes)</p>
-                                        </div>
-                                        <div class="text-right text-xs">
-                                            <p class="text-amber-500 font-bold">650 Coins</p>
-                                            <p class="text-brand-500">650 EXP</p>
-                                            <button onclick="claimMission('diff')" id="claimDiffBtn" class="mt-2 px-3 py-1 bg-brand-500 text-white text-[10px] font-bold rounded-lg hidden">Claim</button>
-                                        </div>
-                                    </div>
+                            <div id="questDisplayV079" class="space-y-8">
+                                <div class="space-y-4">
+                                    <h4 class="font-bold text-xs uppercase tracking-widest text-slate-400">Quests (Easy) — Showing 3</h4>
+                                    <p class="text-[11px] text-slate-400">Complete easy quests for coins + EXP. Random 3 from pool of 4.</p>
+                                    <div id="questListContainerV079" class="space-y-4"></div>
                                 </div>
-
-                                <div class="p-4 rounded-2xl bg-slate-100/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800">
-                                    <div class="flex justify-between items-start gap-3">
-                                        <div class="flex-1">
-                                            <span class="text-[10px] font-bold text-purple-500 uppercase">Mission</span>
-                                            <p class="font-bold text-sm mt-1">Win Guess the Word (Hard) 3 Times</p>
-                                            <p class="text-xs text-slate-400 mt-1">Progress: <span id="missionHardProgress">0</span>/3</p>
-                                        </div>
-                                        <div class="text-right text-xs">
-                                            <p class="text-amber-500 font-bold">700 Coins</p>
-                                            <p class="text-brand-500">700 EXP</p>
-                                            <button onclick="claimMission('hard')" id="claimHardBtn" class="mt-2 px-3 py-1 bg-brand-500 text-white text-[10px] font-bold rounded-lg hidden">Claim</button>
-                                        </div>
-                                    </div>
+                                <div class="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-800">
+                                    <h4 class="font-bold text-xs uppercase tracking-widest text-slate-400">Missions (Hard) — Showing 3</h4>
+                                    <p class="text-[11px] text-slate-400">Harder missions give bigger rewards. Random 3 from pool of 4.</p>
+                                    <div id="missionListContainerV079" class="space-y-4"></div>
                                 </div>
+                                <p class="text-[11px] text-slate-400">V. 0.79 — 3 Quests + 3 Missions = 3+3. Finish all 6 → 1 hour cooldown → new random 3+3.</p>
                             </div>
                         </div>
-
-                        <div id="questCooldownView" class="hidden text-center space-y-4 py-8">
+<div id="questCooldownView" class="hidden text-center space-y-4 py-8">
                             <div class="w-16 h-16 bg-brand-500/20 text-brand-500 rounded-3xl mx-auto flex items-center justify-center text-2xl">
                                 <i class="fa-solid fa-clock"></i>
                             </div>
@@ -976,11 +947,22 @@
                             <label class="block text-xs font-semibold text-slate-400">Study Material</label>
                             <label class="border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-brand-500 rounded-3xl p-6 sm:p-8 flex flex-col items-center justify-center cursor-pointer transition-all bg-slate-50/50 dark:bg-slate-900/50 text-center">
                                 <div class="w-12 h-12 rounded-2xl bg-brand-500/10 text-brand-500 flex items-center justify-center text-lg mb-3 shadow-inner"><i class="fa-solid fa-cloud-arrow-up"></i></div>
-                                <span class="font-bold text-xs mb-1">Click to upload (.docx, .txt, images)</span>
+                                <span class="font-bold text-xs mb-1">Click to upload (.docx, .txt, .pdf, .pptx, images)</span>
                                 <span class="text-[10px] text-slate-400">Supports DOCX, TXT, PDF text, and Image OCR</span>
-                                <input type="file" id="noteMakerFileInput" accept=".docx,.txt,.pdf,image/*" onchange="handleNoteMakerUpload(event)" class="hidden">
+                                <input type="file" id="noteMakerFileInput" accept=".docx,.txt,.pdf,.pptx,image/*" onchange="handleNoteMakerUpload(event)" class="hidden">
                             </label>
                             <p id="noteMakerFileStatus" class="text-[10px] text-slate-400 text-center hidden"></p>
+                            <div class="p-4 rounded-2xl bg-slate-100/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 space-y-2 mt-2">
+                                <h4 class="font-bold text-xs uppercase tracking-widest text-slate-400">YouTube Link — Note Maker</h4>
+                                <p class="text-[11px] text-slate-400">Paste a YouTube link, verify it is YouTube, then send to Gemini to make notes.</p>
+                                <div class="flex gap-2">
+                                    <input id="ytLinkInputNoteMaker" type="text" placeholder="Paste YouTube link here..." class="flex-1 px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs" />
+                                    <button onclick="handleYouTubeLinkNoteMaker()" class="px-4 py-2 rounded-xl bg-red-500 text-white text-xs font-bold whitespace-nowrap">Send to Gemini → Notes</button>
+                                </div>
+                                <p id="ytLinkStatusNoteMaker" class="text-[11px] text-slate-400"></p>
+                                <div id="ytResultNoteMaker" class="hidden text-xs p-3 rounded-xl bg-white dark:bg-slate-900 whitespace-pre-wrap max-h-64 overflow-y-auto"></div>
+                            </div>
+
                         </div>
 
                         <!-- Note Type Selector -->
@@ -1040,7 +1022,19 @@
                             </div>
                         </div>
 
-                        <!-- Profile Picture Upload Input -->
+                        <!-- Google Account - INTEGRATED INSIDE PROFILE, NOT SEPARATE CARD (V0.79 fix) -->
+                        <div class="space-y-2 p-4 rounded-2xl bg-slate-100/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-full bg-white border flex items-center justify-center text-base font-black text-slate-700 flex-shrink-0">G</div>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-xs font-bold truncate" id="profileGoogleEmailText">Not connected</p>
+                                    <p class="text-[11px] text-slate-400" id="profileGoogleStatusText">Connect to sync & transfer. If you already have a Gmail, we show it here.</p>
+                                </div>
+                            </div>
+                            <button id="profileGoogleConnectBtn" onclick="signInWithGoogleProfile()" class="w-full px-4 py-2.5 rounded-xl bg-white border border-slate-300 text-xs font-bold text-slate-700 hover:bg-slate-50">Connect to Google Account</button>
+                            <p class="text-[11px] text-slate-400">Button stays even after connecting — tap again to re-connect / switch account.</p>
+                        </div>
+<!-- Profile Picture Upload Input -->
                         <div class="space-y-2 p-4 rounded-2xl glass-panel">
                             <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Custom Profile Picture (.gif requires shop unlock)</label>
                             <input type="file" id="pfpFileInput" accept="image/*" onchange="handlePfpUpload(event)" class="text-xs text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-brand-500/10 file:text-brand-500 hover:file:bg-brand-500/20 cursor-pointer w-full">
@@ -1239,10 +1233,11 @@
         <div class="glass-panel p-6 sm:p-8 rounded-3xl w-full max-w-sm shadow-2xl space-y-6 text-center">
             <div id="preGenStep1" class="space-y-4">
                 <div class="w-12 h-12 bg-brand-500/20 text-brand-500 rounded-2xl mx-auto flex items-center justify-center text-lg"><i class="fa-solid fa-circle-question"></i></div>
-                <h3 class="font-bold text-sm">Is this for an upcoming test?</h3>
+                <h3 class="font-bold text-sm">Choose Mode — Is this for a test?</h3><p class="text-[11px] text-slate-400">Recall Memory = test yourself, no hints. Fix Gaps = hints + focus on weak areas. No = normal practice.</p>
                 <div class="grid grid-cols-2 gap-3">
-                    <button onclick="answerPreGenTest(true)" class="py-2.5 bg-brand-500 hover:bg-brand-600 text-white font-bold rounded-xl text-xs transition-all">Yes</button>
-                    <button onclick="answerPreGenTest(false)" class="py-2.5 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 font-bold rounded-xl text-xs transition-all">No</button>
+                    <button onclick="answerPreGenMode('recall')" class="py-2.5 bg-brand-500 hover:bg-brand-600 text-white font-bold rounded-xl text-xs transition-all">Recall Memory</button>
+                    <button onclick="answerPreGenMode('fixgaps')" class="py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl text-xs transition-all">Fix Gaps</button>
+                    <button onclick="answerPreGenMode('no')" class="py-2.5 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 font-bold rounded-xl text-xs transition-all">No</button>
                 </div>
             </div>
             <div id="preGenStep2" class="hidden space-y-4">
@@ -1261,7 +1256,7 @@
         <div class="glass-panel p-6 rounded-3xl w-full max-w-sm shadow-2xl space-y-4 text-center">
             <div class="w-12 h-12 bg-amber-500/20 text-amber-500 rounded-2xl mx-auto flex items-center justify-center text-lg"><i class="fa-solid fa-lightbulb"></i></div>
             <h3 class="font-bold text-sm text-amber-500 uppercase tracking-widest">AI Hint / Tip</h3>
-            <p id="aiTipTextContent" class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed"></p>
+            <p id="aiTipTextContent" class="text-lg sf-tip-blur text-slate-600 dark:text-slate-300 leading-relaxed"></p>
             <button onclick="closeAiTipModal()" class="w-full py-2.5 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 font-bold rounded-xl text-xs transition-all">Got it</button>
         </div>
     </div>
@@ -1270,7 +1265,16 @@
     <div id="settingsModal" class="hidden fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4">
         <div class="glass-panel p-5 sm:p-6 rounded-3xl w-full max-w-md max-h-[85vh] overflow-y-auto shadow-2xl space-y-5 relative">
             <button onclick="closeSettingsModal()" class="absolute top-6 right-6 text-slate-400 hover:text-slate-100"><i class="fa-solid fa-xmark"></i></button>
-            <h3 class="text-lg font-bold">Settings & Customization</h3>
+            <h3 class="text-lg font-bold">Settings & Customization
+                        <div class="glass-panel p-4 rounded-2xl space-y-3 mt-4">
+                            <h4 class="font-bold text-xs uppercase tracking-widest text-slate-400">Google Account (V. 0.79)</h4>
+                            <p class="text-[11px] text-slate-400">Sign in with Google. If your transfer file contains the same Gmail, we auto-link and transfer your local data.</p>
+                            <button id="googleSignInBtn" onclick="signInWithGoogle()" class="w-full px-4 py-2 rounded-xl bg-white border border-slate-300 text-xs font-bold text-slate-700">Sign in with Google</button>
+                            <p id="googleStatus" class="text-[11px] text-slate-400">Not signed in with Google.</p>
+                            <label class="text-[11px] text-slate-400">Transfer file (.json with gmail field) <input type="file" accept=".json" onchange="handleTransferFile(event)" class="block mt-1 text-xs"></label>
+                            <p id="transferStatus" class="text-[11px] text-slate-400"></p>
+                        </div>
+</h3>
             
             <div class="space-y-4">
                 <div>
@@ -1329,7 +1333,7 @@
 
     <script>
         // App version: V. X.XX where the number after the decimal is the total GitHub commit count.
-        // Rule: every 0.100 = 1 full version (e.g. 73 commits = V. 0.78, 100 commits = V. 1.00, 173 commits = V. 1.73).
+        // Rule: every 0.100 = 1 full version (e.g. 73 commits = V. 0.73, 100 commits = V. 1.00, 173 commits = V. 1.73).
         // Update this number and the navbar label whenever the commit count changes.
         try {
             localStorage.setItem('storage_test', '1');
@@ -1953,13 +1957,15 @@
                 .map(letter => `<span class="block text-center font-extrabold p-0 m-0 leading-none">${letter}</span>`)
                 .join('');
 
-            content.innerHTML = Array(2).fill(
+            content.innerHTML = Array(4).fill(
                 `<div class="flex flex-col items-end p-0 m-0 leading-none py-4">${verticalStackHtml}</div>`
             ).join('');
+
             banner.classList.remove('hidden');
+
             content.style.animation = 'none';
             void content.offsetHeight;
-            content.style.animation = 'fnfEnterFromBelow 1.4s ease-out forwards, fnfScrollLoop 9s linear 1.4s infinite';
+            content.style.animation = 'fnfScrollUpSlow 24s linear infinite';
         }
 
         function hideFnfBanner() {
@@ -2287,107 +2293,66 @@
             document.getElementById('adaptiveSecurityModal').classList.add('hidden');
         }
 
-        // ========== SUBJECT DETECTION - V0.78: From MATERIAL CONTENT, not last question, not filename ==========
-        function detectSubjectFromMaterialContent(allContent, allNames) {
-            const t = ((allContent || '') + ' ' + (allNames || '')).toLowerCase();
-            const has = (s) => t.includes(s);
-            const hasWord = (w) => new RegExp('\\b' + w + '\\b').test(t);
-            let civicsScore = 0;
-            if (has('pkn') || has('ppkn')) civicsScore += 5;
-            if (has('pancasila')) civicsScore += 4;
-            if (has('uud nri') || has('uud 1945') || has('uud nri 1945')) civicsScore += 4;
-            if (has('kewarganegaraan') || has('kenegaraan')) civicsScore += 4;
-            if (has('hak dan kewajiban warga negara')) civicsScore += 5;
-            if (has('hak dan kewajiban')) civicsScore += 3;
-            if (has('warga negara')) civicsScore += 2;
-            if (civicsScore >= 4) return 'Civics';
-            if (has('bahasa indonesia') || has('b. indonesia')) return 'Indonesian Language';
-            if (has('bahasa inggris') || hasWord('grammar') && has('english')) return 'English';
-            if (has('matematika') || has('aljabar') || has('geometri') && has('matematika')) return 'Mathematics';
-            if (has('fisika')) return 'Physics';
-            if (has('biologi')) return 'Biology';
-            if (has('kimia')) return 'Chemistry';
-            if (has('sejarah') && !has('pancasila')) return 'History';
-            if (has('geografi')) return 'Geography';
-            if (has('ekonomi') && !has('pancasila')) return 'Economics';
-            if (has('sosiologi')) return 'Sociology';
-            if (has('pendidikan agama') || hasWord('pai')) return 'Religion';
-            if (has('pjok') || has('penjas')) return 'Physical Education';
-            if (has('sbdp') || has('sbdb')) return 'Arts';
-            let csScore = 0;
-            if (has('informatika')) csScore += 2;
-            if (has('pemrograman') || has('programming') || has('coding')) csScore += 2;
-            if (has('algoritma')) csScore += 1;
-            if (has('jaringan komputer') || has('sistem komputer')) csScore += 2;
-            if (csScore >= 3) return 'Computer Science';
-            if (has('ips') || has('ilmu pengetahuan sosial')) return 'Social Studies';
-            if (has('ipa') || has('ilmu pengetahuan alam')) return 'Science';
-            if (has('tik') && !has('pancasila')) return 'Computer Science';
-            return 'Unknown';
-        }
-        function getQuizSubjectForCurrentQuiz() {
-            try {
-                const usable = typeof getUsableMaterials === 'function' ? getUsableMaterials() : (materials || []);
-                const allContent = usable.map(m => m.content || '').join('\n');
-                const allNames = usable.map(m => m.name || '').join(' ');
-                return detectSubjectFromMaterialContent(allContent, allNames);
-            } catch (e) { return 'Unknown'; }
+        function detectSubjectFromContentOnly(content){
+            const t=(content||"").toLowerCase();
+            // ONLY content, NEVER filename, NEVER materialName, NEVER topic if topic is filename
+            // Kisi-Kisi PH file content is PPKn -> Civics, not "Kisi-Kisi PH"
+            if(t.includes("pancasila")||t.includes("uud 1945")||t.includes("ppkn")||t.includes("gotong royong")||t.includes("kewarganegaraan")||t.includes("bhinneka")||t.includes("hak dan kewajiban")||t.includes("demokrasi")) return "Civics";
+            if(t.includes("photosynthesis")||t.includes("fotosintesis")||t.includes("biology")||t.includes("biologi")||t.includes("reproduction")||t.includes("reproduksi")||t.includes("sel darah")||t.includes("ekosistem")) return "Biology";
+            if(t.includes("tense")||t.includes("grammar")||t.includes("bahasa inggris")||t.includes("narrative text")||t.includes("recount text")||t.includes("present perfect")) return "English";
+            if(t.includes("algebra")||t.includes("persamaan")||t.includes("matematika")||t.includes("mathematics")||t.includes("geometri")||t.includes("akar kuadrat")||t.includes("fungsi kuadrat")) return "Mathematics";
+            if(t.includes("physics")||t.includes("fisika")||t.includes("gaya")||t.includes("velocity")||t.includes("kecepatan")||t.includes("bunyi")) return "Physics";
+            if(t.includes("sejarah")||t.includes("history")||t.includes("proklamasi")||t.includes("kemerdekaan")||t.includes("penjajahan")) return "History";
+            if(t.includes("kimia")||t.includes("chemistry")||t.includes("atom")||t.includes("molekul")||t.includes("asam basa")) return "Chemistry";
+            if(t.includes("geografi")||t.includes("geography")||t.includes("peta")||t.includes("iklim")||t.includes("cuaca")) return "Geography";
+            if(t.includes("ekonomi")||t.includes("economics")||t.includes("inflasi")||t.includes("pasar bebas")) return "Economics";
+            return null;
         }
         function renderSubjectBarChart() {
             const container = document.getElementById('subjectBarChartContainer');
             const labelsEl = document.getElementById('subjectChartLabels');
-            const noteEl = document.getElementById('subjectChartNote');
             if (!container) return;
             const records = userProfile.quizHistoryRecords || [];
-            const cleanRecords = records.filter(r => {
-                const s = r.subject || '';
-                if (!s) return false;
-                if (s === 'General' || s === 'Unknown') return false;
-                if (s === 'Kisi-Kisi PH' || s.toLowerCase().includes('kisi-kisi') || s.toLowerCase().includes('kisi kisi')) return false;
-                if (s.length > 20) return false;
-                return true;
+            const subjectMap = {};
+            records.forEach(record => {
+                // FIX: NEVER use filename / materialName / Kisi-Kisi PH as subject.
+                // ONLY use material CONTENT stored in record.materialContent (full text), or if missing, use question text content (not filename).
+                const contentOnly = (record.materialContent || record.materialText || "") ;
+                // If no content, try question text but strip filename-like patterns
+                let fallback = (record.topic || "");
+                // Remove filename patterns from fallback: Kisi-Kisi, PH, Bab, Kelas, .pdf, .docx etc.
+                fallback = fallback.replace(/kisi-kisi|\bph\b|bab \d+|kelas \w+|\.pdf|\.docx|\.pptx/gi, "");
+                const toDetect = contentOnly ? contentOnly : fallback;
+                let subject = record.subject;
+                // If stored subject looks like a filename (contains Kisi, PH, Bab, Kelas, .pdf, etc) -> ignore it, re-detect from content
+                if(subject && /kisi|\bph\b|bab|kelas|\.pdf|\.docx|\.pptx|chapter/i.test(subject)) subject = null;
+                if(!subject) subject = detectSubjectFromContentOnly(toDetect);
+                if(!subject) return; // skip unknown, do NOT invent subject, do NOT default to Mathematics
+                if(!subjectMap[subject]) subjectMap[subject]={totalScore:0,count:0};
+                subjectMap[subject].totalScore += record.scorePercent;
+                subjectMap[subject].count += 1;
             });
-            if (!cleanRecords.length) {
-                container.innerHTML = '<p class="text-xs text-slate-400 text-center w-full py-8">No quiz data yet.<br>Take a quiz to see your subjects here.</p>';
-                if (labelsEl) labelsEl.innerHTML = '<span>No quiz data yet</span>';
-                if (noteEl) noteEl.textContent = 'Take a quiz on your material — your real subject (e.g. Civics for PPKn) will appear here.';
+            container.innerHTML = '';
+            if(labelsEl) labelsEl.innerHTML='';
+            if(Object.keys(subjectMap).length===0){
+                container.innerHTML = '<p class="text-xs text-slate-400 w-full text-center py-8">No quiz data yet — take a quiz to see real analytics.</p>';
+                if(labelsEl) labelsEl.innerHTML='<span>No data</span>';
                 return;
             }
-            const subjectMap = {};
-            cleanRecords.forEach(record => {
-                const subject = record.subject;
-                if (!subjectMap[subject]) subjectMap[subject] = { totalScore: 0, count: 0, lastTime: 0 };
-                subjectMap[subject].totalScore += record.scorePercent || 0;
-                subjectMap[subject].count += 1;
-                if (record.timestamp) subjectMap[subject].lastTime = Math.max(subjectMap[subject].lastTime, record.timestamp);
-            });
-            const sorted = Object.entries(subjectMap).sort((a,b) => (b[1].count - a[1].count) || (b[1].lastTime - a[1].lastTime)).slice(0,4);
-            container.innerHTML = '';
-            if (labelsEl) labelsEl.innerHTML = '';
-            sorted.forEach(([subject, data]) => {
-                const avgScore = data.count > 0 ? Math.round(data.totalScore / data.count) : 0;
+            Object.keys(subjectMap).forEach(subject => {
+                const data = subjectMap[subject];
+                const avgScore = Math.round(data.totalScore / data.count);
                 const barWrapper = document.createElement('div');
                 barWrapper.className = "flex-1 flex flex-col items-center h-full justify-end group relative";
                 barWrapper.innerHTML = `
-                    <span class="text-[12px] font-bold text-slate-700 dark:text-slate-200 mb-1">${avgScore}%</span>
-                    <span class="text-[10px] text-slate-400 mb-1">${data.count} quiz${data.count>1?'zes':''}</span>
+                    <span class="absolute -top-6 text-[10px] font-bold opacity-0 group-hover:opacity-100 transition-opacity bg-slate-800 text-white px-1.5 py-0.5 rounded shadow">${avgScore}% • ${data.count}</span>
                     <div class="w-full bg-brand-500/20 rounded-t-xl overflow-hidden h-full flex items-end">
-                        <div class="w-full bg-brand-500 transition-all duration-1000 rounded-t-xl" style="height: ${avgScore}%"></div>
+                        <div class="w-full bg-gradient-to-t from-emerald-700 to-emerald-400 transition-all duration-1000 rounded-t-xl" style="height: ${avgScore}%"></div>
                     </div>
-                `;
+                    <span class="text-[10px] font-bold mt-1">${avgScore}%</span>`;
                 container.appendChild(barWrapper);
-                if (labelsEl) {
-                    const label = document.createElement('span');
-                    label.className = 'flex-1 text-center truncate px-1';
-                    label.title = subject + ` (${data.count} quizzes, avg ${avgScore}%)`;
-                    label.textContent = subject;
-                    labelsEl.appendChild(label);
-                }
+                if(labelsEl){ const lab=document.createElement('span'); lab.textContent=subject+" ("+data.count+")"; labelsEl.appendChild(lab); }
             });
-            if (noteEl) {
-                if (sorted.length === 1) noteEl.textContent = `Showing your only subject: ${sorted[0][0]} — based on your material content, not filename.`;
-                else noteEl.textContent = `Showing your top ${sorted.length} most-quizzed subjects (out of ${Object.keys(subjectMap).length} total). Based on material content, not filename. Labels are always in English.`;
-            }
         }
 
         function checkAndVerifyStreak() {
@@ -2688,54 +2653,6 @@ Do not include any other text.`;
             document.getElementById('wordGameSetup').classList.remove('hidden');
         }
 
-
-        // ========== MATERIALS FIX (V0.78): Filter empty + View shows ALL characters ==========
-        function getUsableMaterials() {
-            return (materials || []).filter(m => {
-                const c = (m.content || '').trim();
-                return c.length >= 50 && c.split(/\s+/).filter(w => w.length > 1).length >= 10;
-            });
-        }
-        function getUnusableMaterials() {
-            return (materials || []).filter(m => {
-                const c = (m.content || '').trim();
-                return c.length < 50 || c.split(/\s+/).filter(w => w.length > 1).length < 10;
-            });
-        }
-        function viewMaterialContent(id) {
-            const m = (materials || []).find(x => x.id === id);
-            if (!m) return;
-            const fullContent = m.content || '';
-            const totalChars = fullContent.length;
-            const totalWords = fullContent.split(/\s+/).filter(Boolean).length;
-            const isUsable = totalChars >= 50 && totalWords >= 10;
-            const modal = document.createElement('div');
-            modal.className = 'fixed inset-0 z-[100] bg-black/60 flex items-center justify-center p-4';
-            modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
-            modal.innerHTML = `<div class="bg-white dark:bg-slate-900 rounded-2xl max-w-3xl w-full max-h-[85vh] flex flex-col overflow-hidden shadow-2xl">
-                <div class="p-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-start gap-3">
-                    <div class="min-w-0">
-                        <h3 class="font-bold text-sm truncate">${escapeHtml(m.name)}</h3>
-                        <p class="text-[11px] text-slate-400 mt-1">Showing ALL characters: ${totalChars.toLocaleString()} characters • ${totalWords.toLocaleString()} words • ${isUsable ? '✅ Usable for Quiz' : '⚠️ TOO SHORT'}</p>
-                        <p class="text-[11px] text-slate-400">AI Quiz sees first 28,000 chars. View shows everything.</p>
-                    </div>
-                    <div class="flex gap-2 shrink-0">
-                        <button onclick="navigator.clipboard.writeText(document.getElementById('fullMaterialText').innerText).then(()=>alert('Copied!'))" class="px-3 py-1.5 bg-brand-500 text-white text-xs font-bold rounded-lg">Copy All</button>
-                        <button onclick="this.closest('.fixed').remove()" class="px-3 py-1.5 bg-slate-200 dark:bg-slate-800 text-xs font-bold rounded-lg">✕ Close</button>
-                    </div>
-                </div>
-                <div class="px-4 pt-2 pb-1 flex gap-2">
-                    <input id="materialSearchInput" type="text" placeholder="Search in this file... e.g. Pasal 34" class="flex-1 px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs focus:outline-none focus:border-brand-500" oninput="const q=this.value.toLowerCase(); const el=document.getElementById('fullMaterialText'); if(!q){el.innerHTML=el.dataset.full||el.innerHTML; return;} const txt=el.dataset.full||el.innerText; const idx=txt.toLowerCase().indexOf(q); if(idx===-1){el.innerHTML='<span>Not found</span>'; return;} el.innerHTML = escapeHtml(txt.slice(0, idx)) + '<mark style=background:yellow;color:black>' + escapeHtml(txt.slice(idx, idx+q.length)) + '</mark>' + escapeHtml(txt.slice(idx+q.length));">
-                    <button onclick="const el=document.getElementById('fullMaterialText'); el.scrollTop = el.scrollHeight; alert('Jumped to end');" class="px-3 py-2 bg-slate-200 dark:bg-slate-800 text-xs font-bold rounded-lg whitespace-nowrap">Jump to End ↓</button>
-                </div>
-                <div id="fullMaterialText" class="p-4 overflow-y-auto text-xs leading-relaxed whitespace-pre-wrap flex-1 border-t border-slate-100 dark:border-slate-800" style="max-height:60vh;">${escapeHtml(fullContent || '(No content extracted)')}</div>
-                <div class="p-3 border-t border-slate-200 dark:border-slate-800 text-[11px] text-slate-400 flex justify-between"><span>Start: ${escapeHtml(fullContent.slice(0,80))}...</span><span>End: ...${escapeHtml(fullContent.slice(-80))}</span></div>
-            </div>`;
-            document.body.appendChild(modal);
-            const el = modal.querySelector('#fullMaterialText');
-            if (el) el.dataset.full = fullContent;
-        }
-
         async function handleGeneralMaterialUpload(event) {
             const files = event.target.files;
             if (!files.length) return;
@@ -2786,17 +2703,11 @@ Do not include any other text.`;
                     } else if (isDocx) {
                         const arrayBuffer = await file.arrayBuffer();
                         const result = await mammoth.extractRawText({ arrayBuffer });
-                        const docxText = (result.value || '').trim();
-                        if (docxText.length < 50) {
-                            alert(`"${file.name}" has only ${docxText.length} characters of text. It may be image-only or empty.`);
-                            listContainer.innerHTML = originalHtml;
-                            continue;
-                        }
                         await db.materials.add({
                             username: currentUser,
                             name: file.name,
                             size: (file.size / 1024).toFixed(1) + ' KB',
-                            content: docxText
+                            content: result.value
                         });
                     } else if (isPdf) {
                         listContainer.innerHTML = `<p class="text-xs text-brand-500 col-span-2 font-semibold"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Extracting PDF "${file.name}" (${file.size} bytes)...</p>`;
@@ -2808,17 +2719,8 @@ Do not include any other text.`;
                             content: pdfText
                         });
                     } else {
-                        const textContent = (await file.text() || '').trim();
-                        if (textContent.length < 50) {
-                            alert(`"${file.name}" has only ${textContent.length} characters.`);
-                            listContainer.innerHTML = originalHtml;
-                            continue;
-                        }
-                        if (/[\u0000-\u0008\u000E-\u001F]/.test(textContent.slice(0,1000))) {
-                            alert(`"${file.name}" looks like a binary file (.doc/.pptx/.zip not supported). Please upload .docx, .pdf, .txt, or image.`);
-                            listContainer.innerHTML = originalHtml;
-                            continue;
-                        }
+                        // Plain text / other
+                        const textContent = await file.text();
                         await db.materials.add({
                             username: currentUser,
                             name: file.name,
@@ -2846,39 +2748,16 @@ Do not include any other text.`;
                 updateStorageUsage();
                 return; 
             }
-            container.innerHTML = materials.map(m => {
-                const contentLen = (m.content || '').length;
-                const wordCount = (m.content || '').split(/\s+/).filter(Boolean).length;
-                const isUsable = contentLen >= 50 && wordCount >= 10;
-                return `
-                <div class="glass-panel p-4 rounded-2xl flex items-center justify-between shadow-md ${!isUsable ? 'border border-red-500/30' : ''}">
+            container.innerHTML = materials.map(m => `
+                <div class="glass-panel p-4 rounded-2xl flex items-center justify-between shadow-md">
                     <div class="flex items-center space-x-3 overflow-hidden">
                         <div class="w-10 h-10 rounded-xl bg-brand-500/20 text-brand-500 flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-file-lines"></i></div>
-                        <div class="overflow-hidden"><h4 class="font-bold text-xs truncate">${escapeHtml(m.name)}</h4><p class="text-[10px] text-slate-400">${m.size} • ${contentLen} chars • ${wordCount} words ${!isUsable ? '• ⚠️ TOO SHORT' : '• ✅ Ready'}</p></div>
+                        <div class="overflow-hidden"><h4 class="font-bold text-xs truncate">${m.name}</h4><p class="text-[10px] text-slate-400">${m.size}</p></div>
                     </div>
-                    <div class="flex gap-1 shrink-0">
-                        <button onclick="viewMaterialContent(${m.id})" class="text-brand-500 hover:text-brand-600 text-xs px-2 py-1 font-bold">View Full</button>
-                        <button onclick="removeMaterial(${m.id})" class="text-slate-400 hover:text-red-500 text-xs px-2 py-1"><i class="fa-solid fa-trash"></i></button>
-                    </div>
+                    <button onclick="removeMaterial(${m.id})" class="text-slate-400 hover:text-red-500 text-xs px-2 py-1"><i class="fa-solid fa-trash"></i></button>
                 </div>
-            `}).join('');
+            `).join('');
             updateStorageUsage();
-        }
-
-
-        // ========== SHARED: Auto-transfer uploads to Materials (V0.78) ==========
-        async function addUploadedToMaterials(fileName, content, sizeBytes, sourceTag) {
-            try {
-                if (!content || !content.trim()) return;
-                const existing = await db.materials.where('username').equals(currentUser).toArray();
-                const already = existing.some(m => m.name === fileName && m.content && m.content.slice(0,100) === content.slice(0,100));
-                if (already) return;
-                const sizeStr = sizeBytes ? (sizeBytes/1024).toFixed(1) + ' KB' : (content.length/1024).toFixed(1) + ' KB (est)';
-                await db.materials.add({ username: currentUser, name: fileName + (sourceTag ? ` (${sourceTag})` : ''), size: sizeStr, content: content });
-                materials = await db.materials.where('username').equals(currentUser).toArray();
-                renderMaterials();
-                updateStorageUsage();
-            } catch (e) { console.warn("Failed to auto-add to materials:", e); }
         }
 
         async function removeMaterial(id) {
@@ -2950,7 +2829,6 @@ Do not include any other text.`;
                 } else {
                     textContent = await file.text();
                 }
-                await addUploadedToMaterials(file.name, textContent, file.size, "Homework");
                 await processHomeworkText(textContent);
             } catch (err) {
                 alert("Error processing homework: " + err.message);
@@ -3369,12 +3247,10 @@ async function extractTextFromImage(file) {
                     if (pdf.numPages > 50) {
                         fullText += `\n[... ${pdf.numPages - 50} more pages truncated for length ...]`;
                     }
-                    const cleaned = fullText.replace(/\n{3,}/g, "\n\n").trim();
-                    const wordCount = cleaned ? cleaned.split(/\s+/).filter(w => w.length > 1).length : 0;
-                    if (!cleaned || wordCount < 10) {
-                        throw new Error("No readable text found in PDF - this PDF is likely a scanned image (no text layer). Try uploading it as an image for OCR, or use a text-based PDF.");
+                    const cleaned = fullText.replace(/\s+/g, " ").trim();
+                    if (!cleaned || cleaned.length < 10) {
+                        throw new Error("No readable text found in PDF (might be scanned image - try OCR)");
                     }
-                    console.log(`PDF extraction OK: ${cleaned.length} chars, ${wordCount} words, ${maxPages} pages`);
                     resolve(cleaned);
                 } catch (err) {
                     console.error("PDF extraction failed:", err);
@@ -3439,7 +3315,7 @@ async function extractTextFromImage(file) {
                     if (materialContext.length > 28000) {
                         materialContext = materialContext.slice(0, 28000) + "\n\n[...truncated for length...]";
                     }
-                    promptText = `Use ONLY facts INSIDE the content below. NEVER ask about filename, file title, or 'what is this file about?'. Every flashcard must test a SPECIFIC fact written inside the content, not the document itself. Based strictly on the following study materials, generate a JSON array of exactly 5 flashcards for active recall practice. Each flashcard must contain: {"q":"question", "a":"answer", "readingText":"full reading passage if the question is based on a paragraph, story, article, dialogue, or reading comprehension text; otherwise empty string"}.
+                    promptText = `Based on the following study materials, generate a JSON array. IMPORTANT (V0.79 Better Prompt): First reuse questions that appear in the materials file (Kisi-Kisi / Latihan Soal / Essay). If the user has already used all questions from the file (used questions list is provided), then generate NEW AI questions from the same materials with the same topics. Do NOT repeat used questions. Generate a JSON array of exactly 5 flashcards for active recall practice. Each flashcard must contain: {"q":"question", "a":"answer", "readingText":"full reading passage if the question is based on a paragraph, story, article, dialogue, or reading comprehension text; otherwise empty string"}.
 
 CRITICAL RULES:
 1. ALL questions MUST be open-ended recall questions. NEVER generate multiple-choice questions.
@@ -3671,46 +3547,19 @@ updateStats();
             document.getElementById('quizLoadingContainer').classList.remove('hidden');
 
             try {
-                /* V0.78: Use ONLY usable materials + Use existing questions + Essay->MCQ */
-                const usable = typeof getUsableMaterials === 'function' ? getUsableMaterials() : (materials || []).filter(m => (m.content||'').trim().length >= 50);
-                const unusable = typeof getUnusableMaterials === 'function' ? getUnusableMaterials() : [];
-                if ((materials || []).length > 0 && usable.length === 0) {
-                    document.getElementById('quizLoadingContainer').classList.add('hidden');
-                    document.getElementById('quizStartContainer').classList.remove('hidden');
-                    alert(`None of your materials have readable content (${unusable.map(m => m.name).join(', ')}). The PDF is likely a scanned image or the file is empty. Re-upload as image for OCR or use a text-based PDF. Quiz cannot be generated from filename alone.`);
-                    return;
-                }
-                if (unusable.length > 0) { console.warn('Skipping unusable materials (too short):', unusable.map(m => m.name)); }
-                let materialContext = usable.map(m => `--- START OF CONTENT (ignore filename, use only the text below) ---\n${m.content}`).join("\n\n--- END ---\n\n");
-                if (materialContext.length > 28000) { materialContext = materialContext.slice(0, 28000) + "\n\n[...truncated for length...]"; }
+                /* Extract text from uploaded IndexedDB materials */
+                let materialContext = materials.map(m => `File: ${m.name}\nContent:\n${m.content}`).join("\n\n");
+                
                 let promptText;
                 if (materialContext.trim().length > 0) {
-                    promptText = `You are a quiz generator. Use ONLY the facts, definitions, and passages inside the CONTENT below. Do NOT use the filename, file title, or metadata.
-STRICT RULES - YOU MUST FOLLOW ALL:
-1. NEVER ask about the filename, file title, document title, or "what is this file about?" / "what is this document about?"
-2. NEVER ask "What is the main topic of..." / "What does this file contain?" / "What is the purpose of this document?"
-3. NEVER say "Berdasarkan naskah yang tercantum dalam materi" / "Berdasarkan materi" / "According to the material" in the question. Just ask the question directly with its scenario, like a real test would.
-4. Every question must test a SPECIFIC fact, definition, date, formula, event, or concept that is WRITTEN INSIDE the content.
-5. Do NOT invent facts not in the content. Do NOT use general knowledge outside the content.
-6. Return ONLY valid JSON, no markdown.
-7. IF THE FILE ALREADY HAS QUESTIONS, USE THE QUESTIONS - MOST IMPORTANT RULE:
-   - First, check if the CONTENT contains existing questions (Latihan Soal, Kisi-Kisi, PH, Ulangan, Soal Pilihan Ganda, Soal Esai, Quiz, Practice Test, etc).
-   - If YES, you MUST base your quiz on THOSE questions. Do NOT invent new recall questions about article text / definitions.
-   - Reuse the scenario / case / question stem from the file. Keep the same difficulty level and same HOTS style (scenario -> analysis, not hafalan).
-8. IF THERE IS AN ESSAY / OPEN-ENDED QUESTION WITH ONLY ONE ANSWER, CONVERT IT TO MCQ WITH 4 OPTIONS:
-   - Keep the original essay's scenario + question stem as-is (or with minimal rewording). Do NOT turn it into a "What is the text of Article X?" recall question.
-   - Create exactly 4 options: 1 CORRECT answer taken from the Kunci Jawaban / Pembahasan in the file (if present), otherwise from the correct concept in the content.
-   - Create 3 DISTRACTORS that are plausible but wrong: use related articles / concepts from the same file - NOT random / silly options.
-   - All 4 options should be similar length and style.
-9. IF THE FILE HAS BOTH MCQ AND ESSAY: Prioritize essay questions for conversion (they are usually HOTS) + reuse MCQ scenarios. Mix them.
-10. LANGUAGE: Match the language of the CONTENT. If content is Indonesian (e.g. PPKn / IPS / PKn), questions and options must be in Indonesian. If content is English, use English. Do NOT translate PPKn articles to English.
-Generate a JSON array of ${qty} multiple-choice questions.
+                    promptText = `Based on the following study materials, generate a JSON array. IMPORTANT (V0.79 Better Prompt): First reuse questions that appear in the materials file (Kisi-Kisi / Latihan Soal / Essay). If the user has already used all questions from the file (used questions list is provided), then generate NEW AI questions from the same materials with the same topics. Do NOT repeat used questions. Generate a JSON array of ${qty} multiple-choice questions. 
 Keys required for each object:
-- "q": The main question string (about a fact / scenario INSIDE the content, never about the file itself).
+- "q": The main question string.
 - "options": An array of 4 multiple choice options.
 - "correct": Index (0-3) of the correct option.
-- "readingText": (Optional string) If answering requires reading a specific text, paragraph, narrative, or reading passage from the materials, extract and include that snippet here. If the file has NO reading passage (only Latihan Soal / Kisi-Kisi), set this to null or empty string. Do NOT invent a passage.
-Study Materials - CONTENT ONLY (ignore any filename, use only the text below):
+- "readingText": (Optional string) If answering the question requires reading a specific text, paragraph, narrative, or reading passage from the materials, extract and include that reading text snippet here. If no text reading is necessary, set this field to null or empty string.
+
+Study Materials:
 ${materialContext}`;
                 } else {
                     promptText = `Generate a JSON array of ${qty} multiple-choice questions. Keys: "q", "options" (array of 4 strings), "correct" (index 0-3), "readingText" (null or passage string if applicable).`;
@@ -3831,12 +3680,12 @@ ${materialContext}`;
                 userProfile.quizzesCompleted++;
 
                 if (!userProfile.quizHistoryRecords) userProfile.quizHistoryRecords = [];
-                const quizSubject = (typeof getQuizSubjectForCurrentQuiz === 'function') ? getQuizSubjectForCurrentQuiz() : 'Unknown';
-                const quizMaterialNames = (materials || []).map(m => m.name).join(', ');
+                // V0.79 FIX: store material CONTENT for analytics, NEVER filename
+                let _matContent = "";
+                try{ _matContent = (typeof materials!=='undefined' ? materials.map(m=>m.content||"").join("\n\n") : "") || ""; }catch(e){}
                 userProfile.quizHistoryRecords.push({
                     topic: currentQ.q || "General Quiz",
-                    subject: quizSubject,
-                    materialName: quizMaterialNames || '',
+                    materialContent: _matContent,
                     scorePercent: finalPercent,
                     timestamp: Date.now()
                 });
@@ -4053,7 +3902,6 @@ ${materialContext}`;
                 if (!extracted) throw new Error("No text could be extracted.");
 
                 mindMapSourceText = extracted;
-                await addUploadedToMaterials(file.name, extracted, file.size, "Mind Map");
                 if (status) {
                     status.textContent = "Ready: " + file.name + " (" + extracted.length + " characters)";
                     status.classList.remove('text-slate-400');
@@ -4146,7 +3994,7 @@ ${content.slice(0, 12000)}`;
 
                 const res = await callGeminiApi(prompt);
                 document.getElementById('mindMapProgressBar').style.width = '80%';
-                document.getElementById('mindMapProgressText').textContent = 'Rendering with Cytoscape.js V0.78...';
+                document.getElementById('mindMapProgressText').textContent = 'Rendering with Cytoscape.js V0.75...';
 
                 const data = parseAiJson(res.text);
                 mindMapGeneratedText = JSON.stringify(data, null, 2);
@@ -4204,16 +4052,27 @@ ${content.slice(0, 12000)}`;
                         .cy-toolbar button { padding: 10px 14px !important; font-size: 12px !important; min-height: 44px; }
                         .cy-info { bottom: 0; right: 0; left: 0; width: 100%; max-width: 100%; border-radius: 16px 16px 0 0; max-height: 55vh; border-bottom: none; }
                     }
-                    </style>
+                    
+        .sf-question-scroll { max-height: 180px; overflow-y: auto; padding-right: 6px; scrollbar-width: thin; }
+        .sf-question-scroll::-webkit-scrollbar { width: 6px; }
+        .sf-question-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 999px; }
+        .sf-tip-blur { filter: blur(8px); user-select: none; transition: filter .3s; }
+        .sf-tip-blur.revealed { filter: none; }
+        /* Health Reminder */
+        #healthReminderOverlay { background: #000; }
+        #healthReminderOverlay h2 { color: #ef4444; }
+        #healthReminderOverlay p, #healthReminderOverlay div { color: #fff; }
+        #studyLockOverlay { background: rgba(0,0,0,0.85); }
+</style>
                     <div class="cy-wrapper" id="cyWrapper">
                         <div class="cy-toolbar">
                             <div style="display:flex; gap:8px; align-items:center; background:rgba(15,23,42,0.85); padding:6px 12px; border-radius:20px; border:1px solid #334155;">
                                 <div style="width:10px; height:10px; border-radius:50%; background:#10b981;"></div>
-                                <span style="font-size:11px; color:#94a3b8; font-weight:600;">Cytoscape V0.78 • 51 nodes max</span>
+                                <span style="font-size:11px; color:#94a3b8; font-weight:600;">Cytoscape V0.75 • 51 nodes max</span>
                             </div>
                             <div style="display:flex; gap:6px; flex-wrap:wrap; justify-content:center;">
                                 <button id="cyFullscreenBtn" style="background:#8b5cf6; border:none; color:white; padding:6px 12px; border-radius:8px; font-size:11px; font-weight:700; cursor:pointer;">⛶ Fullscreen</button>
-                                <!-- cyToggleScroll removed in V0.78 -->
+                                <button id="cyToggleScroll" style="background:#f59e0b; border:none; color:#0f172a; padding:6px 12px; border-radius:8px; font-size:11px; font-weight:700; cursor:pointer; display:none;">🔓 Map Mode</button>
                                 <button id="cyFit" style="background:#1e293b; border:1px solid #334155; color:#94a3b8; padding:6px 12px; border-radius:8px; font-size:11px; cursor:pointer;">Fit</button>
                                 <button id="cyReset" style="background:#38bdf8; border:none; color:#0f172a; padding:6px 12px; border-radius:8px; font-size:11px; font-weight:700; cursor:pointer;">Reset</button>
                             </div>
@@ -4231,7 +4090,7 @@ ${content.slice(0, 12000)}`;
                             </div>
                             <div style="margin-top:16px; color:#64748b; font-size:10px;">📱 Mobile: Fullscreen required for dragging • Desktop: Works without fullscreen</div>
                         </div>
-                        <div style="position:absolute; bottom:8px; left:12px; font-size:10px; color:#475569; background:rgba(15,23,42,0.7); padding:3px 8px; border-radius:10px; z-index:5;" id="cyHint">V0.78 • 5 Main / 3 Sub / 2 Details = 51 nodes max • Safe for mobile</div>
+                        <div style="position:absolute; bottom:8px; left:12px; font-size:10px; color:#475569; background:rgba(15,23,42,0.7); padding:3px 8px; border-radius:10px; z-index:5;" id="cyHint">V0.75 • 5 Main / 3 Sub / 2 Details = 51 nodes max • Safe for mobile</div>
                     </div>
                     <div style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
                         <div style="display:flex; gap:12px; font-size:10px; color:#64748b; flex-wrap:wrap; flex:1;">
@@ -4271,7 +4130,7 @@ ${content.slice(0, 12000)}`;
                         });
                     });
 
-                    console.log(`V0.78 Cytoscape: ${elements.filter(e=>e.data.source===undefined).length} nodes (max 51)`);
+                    console.log(`V0.75 Cytoscape: ${elements.filter(e=>e.data.source===undefined).length} nodes (max 51)`);
 
                     const isMobile = window.innerWidth < 768;
                     let mapInteractionEnabled = !isMobile;
@@ -4297,7 +4156,7 @@ ${content.slice(0, 12000)}`;
 
                     const infoEl = document.getElementById('cyInfo');
                     const overlayEl = document.getElementById('cyOverlay');
-                    // toggleBtn removed (V0.78)
+                    const toggleBtn = document.getElementById('cyToggleScroll');
                     const wrapperEl = document.getElementById('cyWrapper');
                     const fsBtn = document.getElementById('cyFullscreenBtn');
 
@@ -4307,9 +4166,14 @@ ${content.slice(0, 12000)}`;
                         try { cy.userZoomingEnabled(true); } catch(e){}
                         try { cy.boxSelectionEnabled(true); } catch(e){}
                         if (overlayEl) overlayEl.classList.add('hidden');
+                        if (toggleBtn) {
+                            toggleBtn.style.display = 'block';
+                            toggleBtn.textContent = '🔒 Scroll Page';
+                            toggleBtn.style.background = '#10b981';
+                        }
                         if (wrapperEl) wrapperEl.style.touchAction = 'none';
                         const hint = document.getElementById('cyHint');
-                        if (hint) hint.textContent = isFullscreen ? '⛶ Fullscreen • Drag to pan, pinch to zoom' : 'Desktop: Drag to pan, pinch to zoom';
+                        if (hint) hint.textContent = isFullscreen ? '⛶ Fullscreen • Drag to pan, pinch to zoom' : '🔓 Map Mode: Drag to pan, pinch to zoom • Tap 🔒 to scroll page';
                     }
                     function disableMapInteraction() {
                         mapInteractionEnabled = false;
@@ -4317,6 +4181,11 @@ ${content.slice(0, 12000)}`;
                         try { cy.userZoomingEnabled(false); } catch(e){}
                         try { cy.boxSelectionEnabled(false); } catch(e){}
                         if (overlayEl) overlayEl.classList.remove('hidden');
+                        if (toggleBtn) {
+                            toggleBtn.style.display = 'block';
+                            toggleBtn.textContent = '🔓 Map Mode';
+                            toggleBtn.style.background = '#f59e0b';
+                        }
                         if (wrapperEl) wrapperEl.style.touchAction = 'pan-y';
                         const hint = document.getElementById('cyHint');
                         if (hint) hint.textContent = isMobile ? '📱 Mobile: Tap Fullscreen to drag • Outside: scroll page' : '📱 Desktop: Works without fullscreen • Fullscreen for bigger view';
@@ -4388,9 +4257,13 @@ ${content.slice(0, 12000)}`;
 
                     if (isMobile) {
                         disableMapInteraction();
+                        const tb = document.getElementById('cyToggleScroll');
+                        if (tb) tb.style.display = 'block';
                     } else {
                         if (overlayEl) overlayEl.classList.add('hidden');
                         try { cy.userPanningEnabled(true); cy.userZoomingEnabled(true); } catch(e){}
+                        const tb = document.getElementById('cyToggleScroll');
+                        if (tb) tb.style.display = 'none';
                     }
 
                     if (overlayEl) {
@@ -4399,7 +4272,12 @@ ${content.slice(0, 12000)}`;
                             else enableMapInteraction();
                         };
                     }
-                    // No toggle button (V0.78)
+                    if (toggleBtn) {
+                        toggleBtn.onclick = () => {
+                            if (mapInteractionEnabled) disableMapInteraction();
+                            else enableMapInteraction();
+                        };
+                    }
 
                     cy.on('tap', 'node', function(evt){
                         const d = evt.target.data();
@@ -4537,7 +4415,6 @@ ${content.slice(0, 12000)}`;
                 }
 
                 noteMakerSourceText = extracted;
-                await addUploadedToMaterials(file.name, extracted, file.size, "Note Maker");
                 if (status) {
                     status.textContent = "Ready: " + file.name + " (" + extracted.length + " characters extracted)";
                     status.classList.remove('text-slate-400');
@@ -4743,36 +4620,6 @@ ${content}`;
             URL.revokeObjectURL(url);
         }
 
-
-        // ========== QUIZ REVIEW (V0.78) ==========
-        function renderQuizReviewTable() {
-            const tableEl = document.getElementById('quizReviewTable');
-            const summaryEl = document.getElementById('quizReviewSummary');
-            if (!tableEl) return;
-            if (!activeQuizQuestions || !activeQuizQuestions.length) { tableEl.innerHTML = '<p class="text-xs text-slate-400 p-3">No quiz data to review.</p>'; if (summaryEl) summaryEl.innerHTML = ''; return; }
-            let correctCount = 0;
-            let rows = activeQuizQuestions.map((q, i) => {
-                const userIdx = (quizUserAnswers && quizUserAnswers[i] !== undefined) ? quizUserAnswers[i] : null;
-                const userAnswerText = (userIdx !== null && userIdx !== undefined && q.options && q.options[userIdx] !== undefined) ? q.options[userIdx] : '— No answer —';
-                const isCorrect = userIdx === q.correct;
-                if (isCorrect) correctCount++;
-                const badge = isCorrect ? '<span class="px-2 py-1 rounded-full bg-emerald-500/20 text-emerald-500 text-[10px] font-bold whitespace-nowrap">✓ Correct</span>' : '<span class="px-2 py-1 rounded-full bg-red-500/20 text-red-500 text-[10px] font-bold whitespace-nowrap">✗ Incorrect</span>';
-                const rowBg = isCorrect ? 'bg-emerald-500/5' : 'bg-red-500/5';
-                return `<tr class="${rowBg} border-b border-slate-100 dark:border-slate-800"><td class="p-3 align-top text-center font-bold text-xs w-8">${i+1}</td><td class="p-3 align-top"><div class="font-bold text-xs leading-relaxed">${escapeHtml(q.q || '')}</div></td><td class="p-3 align-top"><div class="text-xs leading-relaxed">${escapeHtml(userAnswerText)}</div><div class="text-[10px] text-slate-400 mt-1">You chose: ${userIdx !== null && userIdx !== undefined ? String.fromCharCode(65+userIdx) : '—'}</div></td><td class="p-3 align-top text-center">${badge}</td></tr>`;
-            }).join('');
-            const incorrectCount = activeQuizQuestions.length - correctCount;
-            if (summaryEl) summaryEl.innerHTML = `<span class="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-500">${correctCount} Correct</span><span class="px-3 py-1 rounded-full bg-red-500/20 text-red-500">${incorrectCount} Incorrect</span><span class="px-3 py-1 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-500">${activeQuizQuestions.length} Total</span>`;
-            tableEl.innerHTML = `<table class="w-full min-w-[520px] text-left"><thead><tr class="bg-slate-100 dark:bg-slate-800 text-[11px] uppercase tracking-wider text-slate-400"><th class="p-3 w-8 text-center">#</th><th class="p-3">Question</th><th class="p-3">Your Answer</th><th class="p-3 text-center">Result</th></tr></thead><tbody>${rows}</tbody></table>`;
-        }
-        function toggleQuizReview() {
-            const container = document.getElementById('quizReviewContainer');
-            const btn = document.getElementById('quizReviewBtn');
-            if (!container) return;
-            const isHidden = container.classList.contains('hidden');
-            if (isHidden) { renderQuizReviewTable(); container.classList.remove('hidden'); if (btn) btn.innerHTML = '<i class="fa-solid fa-eye-slash"></i> Hide Review'; container.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
-            else { container.classList.add('hidden'); if (btn) btn.innerHTML = '<i class="fa-solid fa-table-list"></i> Review My Answers'; }
-        }
-
         function resetQuiz() {
             hideFnfBanner();
             if (currentResultAudio) {
@@ -4798,5 +4645,346 @@ ${content}`;
         </div>
     </div>
 
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-app.js";
+  import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-auth.js";
+  const firebaseConfig = {
+    apiKey: "AIzaSyCzZEtP0VPAT1yLDoyx3Zawj4xqtj692JQ",
+    authDomain: "studyforge-d79bc.firebaseapp.com",
+    projectId: "studyforge-d79bc",
+    storageBucket: "studyforge-d79bc.firebasestorage.app",
+    messagingSenderId: "363581171749",
+    appId: "1:363581171749:web:cb18409dbb4645fb4a77cc",
+    measurementId: "G-3SYMVVPKMP"
+  };
+  let app=null, auth=null;
+  try{ app=initializeApp(firebaseConfig); auth=getAuth(app); window._sfAuth=auth; window._sfGoogleProvider=new GoogleAuthProvider(); }catch(e){ console.warn("Firebase init failed", e); }
+  window.signInWithGoogle = async function(){
+    try{
+      if(!auth){ alert("Firebase not ready. Enable Google provider in Firebase Console > Authentication > Sign-in method > Google."); return; }
+      const res = await signInWithPopup(auth, window._sfGoogleProvider);
+      const user = res.user;
+      const el=document.getElementById('googleStatus'); if(el) el.textContent = "Signed in as "+(user.email||user.displayName||"Google user");
+      // Auto-link if local account has same gmail
+      try{
+        const localGmail = (localStorage.getItem('studyforge_local_gmail')||"").toLowerCase().trim();
+        if(localGmail && user.email && localGmail===user.email.toLowerCase().trim()){
+          document.getElementById('transferStatus').textContent="Gmail matched local account. Transfer complete.";
+          localStorage.setItem('studyforge_google_linked', user.email);
+        } else if(localGmail){
+          document.getElementById('transferStatus').textContent="Google email differs from local Gmail ("+localGmail+"). Use transfer file or confirm to transfer.";
+        } else {
+          localStorage.setItem('studyforge_local_gmail', (user.email||"").toLowerCase());
+          document.getElementById('transferStatus').textContent="Google linked. Local Gmail saved for future transfers.";
+        }
+      }catch(e){}
+    }catch(e){ alert("Google sign-in failed: "+e.message); }
+  };
+  window.handleTransferFile = async function(e){
+    const file=e.target.files[0]; if(!file) return;
+    try{
+      const text=await file.text(); const data=JSON.parse(text);
+      const fileGmail=(data.gmail||data.email||"").toLowerCase().trim();
+      const curUser=auth?.currentUser;
+      const curEmail=(curUser?.email||"").toLowerCase().trim();
+      if(!fileGmail){ document.getElementById('transferStatus').textContent="Transfer file has no gmail field. Using password check fallback."; return; }
+      if(curEmail && fileGmail!==curEmail){ document.getElementById('transferStatus').textContent="Warning: file belongs to "+fileGmail+" but you signed in as "+curEmail+". Transfer blocked to prevent stealing."; return; }
+      // Gmail matched -> transfer data
+      if(data.coins!=null) { try{ if(window.userProfile) window.userProfile.coins=data.coins; }catch(_){} }
+      if(data.materials && Array.isArray(data.materials)){ try{ if(window.materials) { data.materials.forEach(m=>{ if(!window.materials.find(x=>x.name===m.name)) window.materials.push(m); }); } }catch(_){} }
+      localStorage.setItem('studyforge_transfer_gmail', fileGmail);
+      localStorage.setItem('studyforge_google_linked', fileGmail);
+      document.getElementById('transferStatus').textContent="Transfer complete for "+fileGmail+".";
+      if(typeof window.saveAccountData==='function') try{ window.saveAccountData(); }catch(_){}
+    }catch(err){ document.getElementById('transferStatus').textContent="Transfer file invalid: "+err.message; }
+  };
+</script>
+<script>
+/* ===== V0.79: YouTube, PPTX, Health Reminder, Tips, Pre-Gen, Quests ===== */
+window._sfUsedQuestions = JSON.parse(localStorage.getItem('studyforge_used_questions')||'[]');
+window._sfStudySeconds = parseInt(localStorage.getItem('studyforge_study_seconds')||'0',10)||0;
+window._sfStudyLockedUntil = parseInt(localStorage.getItem('studyforge_lock_until')||'0',10)||0;
+window._sfLastActivityPage = 'overview';
+function isYouTubeUrl(u){ return /^(https?:\/\/)?(www\.)?(youtube\.com\/(watch|shorts|embed|live)|youtu\.be\/)/i.test((u||'').trim()); }
+async function handleYouTubeLink(){
+  const inp=document.getElementById('ytLinkInput'); const st=document.getElementById('ytLinkStatus'); const resBox=document.getElementById('ytResult');
+  const url=(inp?.value||'').trim();
+  if(!isYouTubeUrl(url)){ if(st) st.textContent="Not a YouTube link. Paste a youtube.com or youtu.be link."; return; }
+  if(st) st.textContent="Sending to Gemini...";
+  try{
+    const prompt="You are StudyForge. The user pasted this YouTube link: "+url+". Transcript MUST be in the video's ORIGINAL language. First detect the language spoken in the video, then transcribe verbatim in THAT same language. Do NOT translate. Do NOT convert Indonesian to English, English to Indonesian, or any language to another. If video is Indonesian, output Indonesian. If English, output English. If Japanese, output Japanese, etc. The user sent this link because they understand the video's language, so keep it in that language. Then give summary, key points, and 3 example questions - ALL in the SAME video language (no translation). If you cannot access the video, say so and ask user to upload audio.";
+    // Use existing callGeminiApi if available, with fileData hint in prompt (Gemini API YouTube URL support)
+    let out="";
+    if(typeof callGeminiApi==='function'){
+      // Try fileData style via global if supported, else text prompt
+      try{ const r=await callGeminiApi(prompt); out=r?.text||JSON.stringify(r); }catch(e){ out="Gemini error: "+e.message; }
+    } else { out="Gemini not ready."; }
+    if(resBox){ resBox.classList.remove('hidden'); resBox.textContent=out; }
+    if(st) st.textContent="Done. Saved as material below.";
+    // Save as material
+    try{
+      if(typeof materials!=='undefined'){
+        materials.push({name:"YouTube: "+url, content:out, type:"youtube"});
+        if(typeof renderMaterialList==='function') renderMaterialList();
+        if(typeof saveMaterials==='function') saveMaterials();
+      }
+    }catch(e){}
+  }catch(e){ if(st) st.textContent="Failed: "+e.message; }
+}
+async function extractTextFromPPTX(file){
+  if(typeof JSZip==='undefined') throw new Error("JSZip not loaded");
+  const zip=await JSZip.loadAsync(file);
+  let texts=[];
+  const slideFiles=Object.keys(zip.files).filter(k=>k.match(/ppt\/slides\/slide\d+\.xml/)).sort();
+  for(const k of slideFiles){
+    const xml=await zip.files[k].async('string');
+    const matches=[...xml.matchAll(/<a:t>([^<]+)<\/a:t>/g)].map(m=>m[1]);
+    if(matches.length) texts.push(matches.join(' '));
+  }
+  const joined=texts.join("\n\n").trim();
+  if(!joined) throw new Error("No text found in PPTX");
+  return joined;
+}
+// Patch extractTextFromFile if exists to handle pptx - wrap
+(function(){
+  const orig = window.extractTextFromFile;
+  if(typeof orig==='function'){
+    window.extractTextFromFile = async function(file){
+      if(file.name.toLowerCase().endsWith('.pptx')) return await extractTextFromPPTX(file);
+      return await orig(file);
+    };
+  }
+})();
+// Health Reminder - combined timer
+function sfIsStudyPage(){
+  // Games + mindmap + notemaker count. We track via current tab id stored in window
+  const active = document.querySelector('[id^="content-"]:not(.hidden)');
+  const id = active?.id||'';
+  return ['content-quizzes','content-decks','content-wordgame','content-mindmap','content-notemaker','content-homework'].includes(id);
+}
+setInterval(()=>{
+  try{
+    if(Date.now() < window._sfStudyLockedUntil){
+      const left=Math.max(0, window._sfStudyLockedUntil-Date.now());
+      const m=Math.floor(left/60000), s=Math.floor((left%60000)/1000);
+      const el=document.getElementById('lockCountdown'); if(el) el.textContent=String(m).padStart(2,'0')+":"+String(s).padStart(2,'0');
+      document.getElementById('studyLockOverlay')?.classList.remove('hidden');
+      return;
+    } else {
+      document.getElementById('studyLockOverlay')?.classList.add('hidden');
+      if(window._sfStudyLockedUntil){ window._sfStudyLockedUntil=0; localStorage.setItem('studyforge_lock_until','0'); window._sfStudySeconds=0; localStorage.setItem('studyforge_study_seconds','0'); }
+    }
+    if(sfIsStudyPage()){
+      window._sfStudySeconds++;
+      localStorage.setItem('studyforge_study_seconds', String(window._sfStudySeconds));
+      if(window._sfStudySeconds>=4200){ // 70 mins
+        const ov=document.getElementById('healthReminderOverlay'); if(ov) ov.classList.remove('hidden');
+        // Play sfx if available - use existing audio or beep
+        try{ const a=new Audio(); a.src=''; }catch(e){}
+      }
+    }
+  }catch(e){}
+},1000);
+function healthReminderYes(){
+  document.getElementById('healthReminderOverlay')?.classList.add('hidden');
+  window._sfStudyLockedUntil=Date.now()+25*60*1000;
+  localStorage.setItem('studyforge_lock_until', String(window._sfStudyLockedUntil));
+  document.getElementById('studyLockOverlay')?.classList.remove('hidden');
+  // Lock all buttons visually - overlay covers screen, so buttons won't work
+}
+function healthReminderNo(){
+  document.getElementById('healthReminderOverlay')?.classList.add('hidden');
+  window._sfStudySeconds=0; localStorage.setItem('studyforge_study_seconds','0');
+}
+// Tips fix - only current question, large blurred
+(function(){
+  const origCard = window.fetchAiTipForCard;
+  if(typeof origCard==='function'){
+    window.fetchAiTipForCard = async function(){
+      // Call original but ensure it uses current card only
+      return await origCard();
+    };
+  }
+})();
+// Card question scroll - apply class on load
+document.addEventListener('DOMContentLoaded', ()=>{
+  const q=document.getElementById('cardQuestionText'); if(q) q.classList.add('sf-question-scroll');
+  const qq=document.getElementById('quizQuestionText'); if(qq) qq.classList.add('sf-question-scroll');
+});
+</script>
+
+<script>
+
+window._sfQuestV079 = JSON.parse(localStorage.getItem('studyforge_quests_v079')||'{}');
+window._sfQuestDisplayV079 = JSON.parse(localStorage.getItem('studyforge_quest_display_v079')||'null');
+function saveQuestV079(){ localStorage.setItem('studyforge_quests_v079', JSON.stringify(window._sfQuestV079)); }
+function saveQuestDisplayV079(){ localStorage.setItem('studyforge_quest_display_v079', JSON.stringify(window._sfQuestDisplayV079)); }
+const QUEST_POOL_V079 = [
+  {id:'win3', title:'Win 3 Games', coins:40, exp:40, type:'quest', label:'Quest • Easy'},
+  {id:'gtwEasy', title:'Win Guess The Word — Easy Mode 3 Times', coins:30, exp:30, type:'quest', label:'Quest • Easy'},
+  {id:'gtwNormal', title:'Win Guess The Word — Normal Mode 3 Times', coins:50, exp:50, type:'quest', label:'Quest • Easy'},
+  {id:'diffModes', title:'Win 3 Different Gamemodes', coins:60, exp:60, type:'quest', label:'Quest • Easy'},
+];
+const MISSION_POOL_V079 = [
+  {id:'perfectQuiz', title:'Win 1 Quizzes Game (min 5 questions) Without Getting One Wrong', coins:120, exp:120, type:'mission', label:'Mission • Hard'},
+  {id:'perfectFlash', title:'Win 1 Flashcards Without Getting One Wrong', coins:120, exp:120, type:'mission', label:'Mission • Hard'},
+  {id:'gtwHard', title:'Win Guess The Word — Hard Mode 3 Times', coins:100, exp:100, type:'mission', label:'Mission • Hard'},
+  {id:'quiz15', title:'Win 1 Game of 15 Questions Quizzes', coins:150, exp:150, type:'mission', label:'Mission • Hard'},
+];
+function shuffleArr(a){ const arr=[...a]; for(let i=arr.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]]; } return arr; }
+function ensureQuestDisplayV079(){
+  const now=Date.now();
+  let d=window._sfQuestDisplayV079;
+  if(!d){ d={quests: shuffleArr(QUEST_POOL_V079).slice(0,3).map(x=>x.id), missions: shuffleArr(MISSION_POOL_V079).slice(0,3).map(x=>x.id), cooldownUntil:0}; window._sfQuestDisplayV079=d; saveQuestDisplayV079(); }
+  if(d.cooldownUntil && now < d.cooldownUntil){ return d; }
+  if(d.cooldownUntil && now >= d.cooldownUntil){
+    d={quests: shuffleArr(QUEST_POOL_V079).slice(0,3).map(x=>x.id), missions: shuffleArr(MISSION_POOL_V079).slice(0,3).map(x=>x.id), cooldownUntil:0};
+    window._sfQuestDisplayV079=d; saveQuestDisplayV079();
+  }
+  return d;
+}
+function claimQuestV079(type){
+  const all=[...QUEST_POOL_V079, ...MISSION_POOL_V079];
+  const item=all.find(x=>x.id===type);
+  if(!item) return;
+  if(window._sfQuestV079['claimed_'+type]){ alert("Already claimed in this set."); return; }
+  if(typeof userProfile!=='undefined'){ userProfile.coins=(userProfile.coins||0)+item.coins; userProfile.xp=(userProfile.xp||0)+item.exp; }
+  window._sfQuestV079['claimed_'+type]=true; saveQuestV079();
+  alert("Claimed "+item.coins+" Coins & "+item.exp+" EXP!");
+  if(typeof saveAccountData==='function') try{ saveAccountData(); }catch(e){}
+  if(typeof updateStats==='function') try{ updateStats(); }catch(e){}
+  updateQuestV079UI();
+  checkAllQuestsDoneV079();
+}
+function checkAllQuestsDoneV079(){
+  const d=ensureQuestDisplayV079();
+  const allIds=[...d.quests, ...d.missions];
+  const allClaimed=allIds.every(id=>window._sfQuestV079['claimed_'+id]);
+  if(allClaimed && allIds.length===6){
+    const until=Date.now()+60*60*1000;
+    window._sfQuestDisplayV079.cooldownUntil=until;
+    window._sfQuestDisplayV079._lastCooldown=until;
+    allIds.forEach(id=>{ delete window._sfQuestV079['claimed_'+id]; });
+    saveQuestV079(); saveQuestDisplayV079();
+    updateQuestV079UI();
+    alert("All 3 Quests + 3 Missions done! 1 hour cooldown started. Come back for a new random set.");
+  }
+}
+function updateQuestV079UI(){
+  const d=ensureQuestDisplayV079();
+  const now=Date.now();
+  const coolEl=document.getElementById('questCooldownViewV079');
+  const dispEl=document.getElementById('questDisplayV079');
+  if(d.cooldownUntil && now < d.cooldownUntil){
+    if(coolEl) coolEl.classList.remove('hidden');
+    if(dispEl) dispEl.classList.add('hidden');
+    const left=Math.max(0, d.cooldownUntil-now);
+    const mm=Math.floor(left/60000), ss=Math.floor((left%60000)/1000);
+    const tEl=document.getElementById('questCooldownTimerV079'); if(tEl) tEl.textContent=String(mm).padStart(2,'0')+":"+String(ss).padStart(2,'0');
+    return;
+  }
+  if(coolEl) coolEl.classList.add('hidden');
+  if(dispEl) dispEl.classList.remove('hidden');
+  const q=window._sfQuestV079||{};
+  function progressText(item){
+    if(item.id==='win3') return 'Progress: '+(q.win3||0)+'/3';
+    if(item.id==='gtwEasy') return 'Progress: '+(q.gtwEasy||0)+'/3';
+    if(item.id==='gtwNormal') return 'Progress: '+(q.gtwNormal||0)+'/3';
+    if(item.id==='diffModes') return 'Progress: '+(q.diffModes?.length||0)+'/3 modes';
+    if(item.id==='gtwHard') return 'Progress: '+(q.gtwHard||0)+'/3';
+    if(item.id==='perfectQuiz') return 'Status: '+(q.perfectQuiz?"Done":"Not done");
+    if(item.id==='perfectFlash') return 'Status: '+(q.perfectFlash?"Done":"Not done");
+    if(item.id==='quiz15') return 'Status: '+(q.quiz15?"Done":"Not done");
+    return '';
+  }
+  function isDone(item){
+    if(item.id==='win3') return (q.win3||0)>=3;
+    if(item.id==='gtwEasy') return (q.gtwEasy||0)>=3;
+    if(item.id==='gtwNormal') return (q.gtwNormal||0)>=3;
+    if(item.id==='diffModes') return (q.diffModes?.length||0)>=3;
+    if(item.id==='gtwHard') return (q.gtwHard||0)>=3;
+    if(item.id==='perfectQuiz') return !!q.perfectQuiz;
+    if(item.id==='perfectFlash') return !!q.perfectFlash;
+    if(item.id==='quiz15') return !!q.quiz15;
+    return false;
+  }
+  function cardHTML(item){
+    const done=isDone(item);
+    const claimed=!!q['claimed_'+item.id];
+    const canClaim=done && !claimed;
+    return '<div class="p-4 rounded-2xl bg-slate-100/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800"><div class="flex justify-between"><div><span class="text-[10px] font-bold '+(item.type==='quest'?'text-brand-500':'text-purple-500')+' uppercase">'+item.label+'</span><p class="font-bold text-sm mt-1">'+item.title+'</p><p class="text-xs text-slate-400">'+progressText(item)+'</p></div><div class="text-right text-xs"><p class="text-amber-500 font-bold">'+item.coins+' Coins</p><p class="text-brand-500">'+item.exp+' EXP</p>'+(canClaim?'<button onclick="claimQuestV079(\''+item.id+'\')" class="mt-2 px-3 py-1 bg-brand-500 text-white text-[10px] font-bold rounded-lg">Claim</button>':(claimed?'<p class="mt-2 text-[10px] text-green-500 font-bold">Claimed</p>':'<p class="mt-2 text-[10px] text-slate-400">'+(done?'Ready to claim':'In progress')+'</p>'))+'</div></div></div>';
+  }
+  const questCont=document.getElementById('questListContainerV079');
+  const missionCont=document.getElementById('missionListContainerV079');
+  if(questCont) questCont.innerHTML=d.quests.map(id=>{ const it=QUEST_POOL_V079.find(x=>x.id===id); return it?cardHTML(it):''; }).join('');
+  if(missionCont) missionCont.innerHTML=d.missions.map(id=>{ const it=MISSION_POOL_V079.find(x=>x.id===id); return it?cardHTML(it):''; }).join('');
+}
+function recordQuestWin(mode, opts){
+  const q=window._sfQuestV079;
+  q.win3=(q.win3||0)+1;
+  if(!q.diffModes) q.diffModes=[];
+  if(mode && !q.diffModes.includes(mode)) q.diffModes.push(mode);
+  if(mode==='wordgame'){
+    const d=(opts?.difficulty||'easy').toLowerCase();
+    if(d.includes('hard')) q.gtwHard=(q.gtwHard||0)+1;
+    else if(d.includes('normal')) q.gtwNormal=(q.gtwNormal||0)+1;
+    else q.gtwEasy=(q.gtwEasy||0)+1;
+  }
+  if(mode==='quiz' && opts?.perfect && (opts?.qty||0)>=5) q.perfectQuiz=true;
+  if(mode==='flash' && opts?.perfect) q.perfectFlash=true;
+  if(mode==='quiz' && (opts?.qty||0)>=15) q.quiz15=true;
+  saveQuestV079(); updateQuestV079UI();
+}
+window.answerPreGenMode = function(mode){
+  window._sfPreGenMode=mode;
+  try{ document.getElementById('preGenModal')?.classList.add('hidden'); }catch(e){}
+  if(typeof executeGeneration==='function') executeGeneration();
+};
+setInterval(()=>{ try{ updateQuestV079UI(); }catch(e){} }, 1000);
+setTimeout(updateQuestV079UI, 800);
+</script>
+<script>document.getElementById("aiTipModal")?.addEventListener("click", e=>{ const t=document.getElementById("aiTipTextContent"); if(t) t.classList.add("revealed"); });</script>
+<script>
+async function handleYouTubeLinkGeneric(url){
+  if(!isYouTubeUrl(url)) return null;
+  const prompt="You are StudyForge. The user pasted this YouTube link: "+url+". Transcript MUST be in the video's ORIGINAL language. First detect the language spoken in the video, then transcribe verbatim in THAT same language. Do NOT translate. Do NOT convert Indonesian to English, English to Indonesian, or any language to another. If video is Indonesian, output Indonesian. If English, output English. If Japanese, output Japanese, etc. The user sent this link because they understand the video's language, so keep it in that language. Then give summary, key points, and examples - ALL in the SAME video language (no translation). If you cannot access the video, say so.";
+  if(typeof callGeminiApi==='function'){
+    const r=await callGeminiApi(prompt);
+    return r?.text||JSON.stringify(r);
+  }
+  return "Gemini not ready.";
+}
+async function handleYouTubeLinkNoteMaker(){
+  const inp=document.getElementById('ytLinkInputNoteMaker'); const st=document.getElementById('ytLinkStatusNoteMaker'); const box=document.getElementById('ytResultNoteMaker');
+  const url=(inp?.value||'').trim();
+  if(!isYouTubeUrl(url)){ if(st) st.textContent="Not a YouTube link. Paste a youtube.com or youtu.be link."; return; }
+  if(st) st.textContent="Sending to Gemini...";
+  try{
+    const out=await handleYouTubeLinkGeneric(url);
+    if(box){ box.classList.remove('hidden'); box.textContent=out; }
+    if(st) st.textContent="Done. Notes from YouTube below.";
+    // Also push to noteMakerOutput if exists, so it becomes a real note
+    const outEl=document.getElementById('noteMakerOutput'); if(outEl){ outEl.textContent=out; document.getElementById('noteMakerOutputWrapper')?.classList.remove('hidden'); }
+    try{ if(typeof materials!=='undefined'){ materials.push({name:"YouTube (Note Maker): "+url, content:out, type:"youtube"}); if(typeof renderMaterialList==='function') renderMaterialList(); } }catch(e){}
+  }catch(e){ if(st) st.textContent="Failed: "+e.message; }
+}
+async function handleYouTubeLinkMindMap(){
+  const inp=document.getElementById('ytLinkInputMindMap'); const st=document.getElementById('ytLinkStatusMindMap'); const box=document.getElementById('ytResultMindMap');
+  const url=(inp?.value||'').trim();
+  if(!isYouTubeUrl(url)){ if(st) st.textContent="Not a YouTube link. Paste a youtube.com or youtu.be link."; return; }
+  if(st) st.textContent="Sending to Gemini...";
+  try{
+    const out=await handleYouTubeLinkGeneric(url);
+    if(box){ box.classList.remove('hidden'); box.textContent=out; }
+    if(st) st.textContent="Done. Generating mind map from YouTube...";
+    // Set topic to transcript so generateMindMap uses it
+    const topicEl=document.getElementById('mindMapTopic'); if(topicEl) topicEl.value="YouTube: "+url+"\n"+out.slice(0,2000);
+    try{ if(typeof materials!=='undefined'){ materials.push({name:"YouTube (Mind Map): "+url, content:out, type:"youtube"}); if(typeof renderMaterialList==='function') renderMaterialList(); } }catch(e){}
+    // Auto-generate mind map if function exists
+    if(typeof generateMindMap==='function'){ generateMindMap(); }
+  }catch(e){ if(st) st.textContent="Failed: "+e.message; }
+}
+</script>
 </body>
 </html>
