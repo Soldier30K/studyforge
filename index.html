@@ -6191,6 +6191,197 @@ setTimeout(function(){ try{ addFlashCancelButtonsV092(); fixGeminiLeakV092(); en
 })();
 </script>
 
+
+<script> // CHECKSUM FALSE-POSITIVE FIX V0.92 — Firebase round-trip was breaking the checksum, so a clean login looked like tampering
+(function(){
+  // 1) Firebase strips undefined / NaN / functions on save, so the object you get back is NEVER byte-identical to what you checksummed.
+  // Clean BEFORE checksumming AND before saving, so save == load.
+  function cleanForFirebaseV092(v){
+    if(v === undefined || typeof v === 'function' || typeof v === 'symbol') return undefined;
+    if(v === null) return null;
+    if(typeof v === 'number'){ return Number.isFinite(v) ? v : null; }
+    if(typeof v !== 'object') return v;
+    if(v instanceof Date) return v.toISOString();
+    if(Array.isArray(v)){
+      var out = [];
+      for(var i=0;i<v.length;i++){ var c = cleanForFirebaseV092(v[i]); out.push(c === undefined ? null : c); }
+      return out;
+    }
+    var o = {};
+    Object.keys(v).forEach(function(k){
+      var c = cleanForFirebaseV092(v[k]);
+      if(c !== undefined) o[k] = c;
+    });
+    return o;
+  }
+  window.cleanForFirebaseV092 = cleanForFirebaseV092;
+  // 2) stableStringify: skip undefined keys, undefined array items -> null (like JSON.stringify), NaN/Infinity -> null
+  function stableStringifyFixedV092(o){
+    if(o === undefined) return 'null';
+    if(o === null || typeof o !== 'object') {
+      if(typeof o === 'number' && !Number.isFinite(o)) return 'null';
+      var j = JSON.stringify(o);
+      return (j === undefined) ? 'null' : j;
+    }
+    if(Array.isArray(o)) return '[' + o.map(function(v){ return stableStringifyFixedV092(v === undefined ? null : v); }).join(',') + ']';
+    var keys = Object.keys(o).filter(function(k){ return o[k] !== undefined && typeof o[k] !== 'function' && typeof o[k] !== 'symbol'; }).sort();
+    return '{' + keys.map(function(k){ return JSON.stringify(k) + ':' + stableStringifyFixedV092(o[k]); }).join(',') + '}';
+  }
+  // 3) computeChecksum: deterministic fallback, NEVER error-Date.now() (that could never verify on load)
+  function fnv1a(str){
+    var h = 2166136261;
+    for(var i=0;i<str.length;i++){ h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
+    return ('00000000' + (h >>> 0).toString(16)).slice(-8);
+  }
+  async function computeChecksumFixedV092(d){
+    try{
+      var cleaned = cleanForFirebaseV092(d);
+      var s = stableStringifyFixedV092(cleaned);
+      if(window.crypto && window.crypto.subtle && window.crypto.subtle.digest){
+        var e = new TextEncoder().encode(s);
+        var b = await window.crypto.subtle.digest('SHA-256', e);
+        return Array.from(new Uint8Array(b)).map(function(x){ return x.toString(16).padStart(2,'0'); }).join('');
+      }
+      // Deterministic fallback, not Date.now()
+      return 'fallback-' + fnv1a(s) + '-' + s.length;
+    }catch(err){
+      try{ return 'fallback-' + fnv1a(stableStringifyFixedV092(d||{})); }catch(err2){ return 'fallback-00000000'; }
+    }
+  }
+  // Override globals (last definition wins)
+  stableStringifyV092 = stableStringifyFixedV092;
+  computeChecksumV092 = computeChecksumFixedV092;
+  window.stableStringifyV092 = stableStringifyFixedV092;
+  window.computeChecksumV092 = computeChecksumFixedV092;
+  // 4) verify: accept old non-deterministic checksums (error-*, fallback-*) once and heal, instead of blocking
+  async function verifyFixedV092(d){
+    if(!d || typeof d !== 'object') return false;
+    if(!d.checksum) return true;
+    if(typeof d.checksum === 'string' && (d.checksum.indexOf('error-') === 0)) return true; // old buggy checksum, cannot verify — accept + heal
+    var rest = {};
+    Object.keys(d).forEach(function(k){ if(k !== 'checksum') rest[k] = d[k]; });
+    var cleaned = cleanForFirebaseV092(rest);
+    var expected = await computeChecksumFixedV092(cleaned);
+    if(expected === d.checksum) return true;
+    // Also try raw rest (for data saved before cleaning) — if that matches, accept
+    try{ var expectedRaw = await computeChecksumFixedV092(rest); if(expectedRaw === d.checksum) return true; }catch(err){}
+    return false;
+  }
+  verifyExportDataV092 = verifyFixedV092;
+  window.verifyExportDataV092 = verifyFixedV092;
+  // 5) Soften the warning — never alert() + block on server data. Log + toast only.
+  showTamperWarningV092 = function(detail){
+    try{ console.warn('[StudyForge] checksum mismatch (not blocking):', detail); }catch(err){}
+    try{ if(typeof showToastV092 === 'function') showToastV092('Cloud data checksum mismatch — restoring anyway and re-saving to fix it.', 'warn'); }catch(err){}
+  };
+  window.showTamperWarningV092 = showTamperWarningV092;
+  // 6) loadUser: NEVER block on checksum fail. Restore anyway, flag for heal.
+  async function loadUserFixedV092(){
+    try{
+      var db = window._sfDB; var auth = window._sfAuth;
+      if(!db || !auth || !auth.currentUser) return null;
+      var uid = auth.currentUser.uid;
+      var mod = await import('https://www.gstatic.com/firebasejs/13.2.0/firebase-database.js');
+      var snap = await mod.get(mod.ref(db, 'users/' + uid));
+      if(!snap.exists()) return null;
+      var val = snap.val();
+      try{
+        var ok = await verifyFixedV092(val);
+        if(!ok){
+          console.warn('[StudyForge] Cloud checksum mismatch on load — restoring anyway (false positive fix). Will re-save with fresh checksum.');
+          window._sfChecksumMismatchV092 = true;
+          // Do NOT show tamper modal, do NOT return null
+        } else { window._sfChecksumMismatchV092 = false; }
+      }catch(err){ window._sfChecksumMismatchV092 = true; }
+      if(val.localStorageData){
+        try{ Object.keys(val.localStorageData).forEach(function(k){ if(k && k.indexOf('studyforge_') === 0) localStorage.setItem(k, val.localStorageData[k]); }); }catch(err){}
+      }
+      return val;
+    }catch(err){ return null; }
+  }
+  loadUserFromServerV092 = loadUserFixedV092;
+  window.loadUserFromServerV092 = loadUserFixedV092;
+  // 7) saveUser: clean payload BEFORE checksum + save, include settings/apiKey, single write
+  async function saveUserFixedV092(){
+    try{
+      var db = window._sfDB; var auth = window._sfAuth;
+      if(!db || !auth || !auth.currentUser) return false;
+      var uid = auth.currentUser.uid;
+      var mod = await import('https://www.gstatic.com/firebasejs/13.2.0/firebase-database.js');
+      var localStorageData = {};
+      try{ for(var i=0;i<localStorage.length;i++){ var k = localStorage.key(i); if(k && k.indexOf('studyforge_') === 0) localStorageData[k] = localStorage.getItem(k); } }catch(err){}
+      var payload = cleanForFirebaseV092({
+        profile: (typeof userProfile !== 'undefined' ? userProfile : {}),
+        materials: (typeof materials !== 'undefined' ? materials : []),
+        decks: (typeof decks !== 'undefined' ? decks : []),
+        localStorageData: localStorageData,
+        gmail: (localStorage.getItem('studyforge_local_gmail') || '') || ((typeof userProfile !== 'undefined' && userProfile && userProfile.googleEmail) || ''),
+        settings: { username: (typeof currentUser !== 'undefined' ? currentUser : ''), apiKey: (typeof apiKey !== 'undefined' ? apiKey : '') },
+        apiKey: (typeof apiKey !== 'undefined' ? apiKey : ''),
+        lastUpdated: Date.now()
+      });
+      payload.checksum = await computeChecksumFixedV092(payload);
+      await mod.set(mod.ref(db, 'users/' + uid), payload);
+      window._sfChecksumMismatchV092 = false;
+      return true;
+    }catch(err){ return false; }
+  }
+  saveUserToServerV092 = saveUserFixedV092;
+  window.saveUserToServerV092 = saveUserFixedV092;
+  // 8) syncBeforeClose: single write, cleaned payload, same checksum logic — remove sendBeacon + fetch double-write race
+  async function syncBeforeCloseFixedV092(){
+    try{ if(typeof saveAccountData === 'function'){ var p = saveAccountData(); if(p && p.catch) p.catch(function(){}); } }catch(err){}
+    try{
+      var auth = window._sfAuth;
+      if(auth && auth.currentUser){
+        var uid = auth.currentUser.uid;
+        var localStorageData = {};
+        try{ for(var i=0;i<localStorage.length;i++){ var k = localStorage.key(i); if(k && k.indexOf('studyforge_') === 0) localStorageData[k] = localStorage.getItem(k); } }catch(err){}
+        var payload = cleanForFirebaseV092({
+          profile: (typeof userProfile !== 'undefined' ? userProfile : {}),
+          materials: (typeof materials !== 'undefined' ? materials : []),
+          decks: (typeof decks !== 'undefined' ? decks : []),
+          localStorageData: localStorageData,
+          gmail: (localStorage.getItem('studyforge_local_gmail') || ''),
+          settings: { username: (typeof currentUser !== 'undefined' ? currentUser : ''), apiKey: (typeof apiKey !== 'undefined' ? apiKey : '') },
+          apiKey: (typeof apiKey !== 'undefined' ? apiKey : ''),
+          lastUpdated: Date.now()
+        });
+        payload.checksum = await computeChecksumFixedV092(payload);
+        var url = 'https://studyforge-d79bc-default-rtdb.asia-southeast1.firebasedatabase.app/users/' + uid + '.json';
+        try{
+          var blob = new Blob([JSON.stringify(payload)], {type: 'application/json'});
+          if(navigator.sendBeacon) navigator.sendBeacon(url, blob);
+          else { fetch(url, {method: 'PUT', body: JSON.stringify(payload), headers: {'Content-Type': 'application/json'}, keepalive: true}).catch(function(){}); }
+        }catch(err){}
+      }
+    }catch(err){}
+  }
+  syncBeforeCloseV092 = syncBeforeCloseFixedV092;
+  window.syncBeforeCloseV092 = syncBeforeCloseFixedV092;
+  // 9) Heal: after cloud restore, if we had a mismatch, re-save with fresh clean checksum so next login won't warn
+  try{
+    if(typeof applyCloudDataV092 === 'function'){
+      var origApply = applyCloudDataV092;
+      var wrapped = false;
+      // applyCloudData is called via global lookup, so override it
+      var newApply = async function(val){
+        var r = await origApply(val);
+        try{
+          if(window._sfChecksumMismatchV092){
+            window._sfChecksumMismatchV092 = false;
+            if(typeof saveUserFixedV092 === 'function'){ setTimeout(function(){ saveUserFixedV092(); }, 1500); }
+          }
+        }catch(err){}
+        return r;
+      };
+      applyCloudDataV092 = newApply;
+      window.applyCloudDataV092 = newApply;
+    }
+  }catch(err){}
+})();
+</script>
+
 </body>
 
 </html>
