@@ -480,7 +480,6 @@
          <li>Copy the transcript and paste it below</li>
         
       </ol>
-      <label class="text-[11px]">Title (optional — app will think it if blank) <input id="transcriptTitleInputV092" type="text" placeholder="Leave blank — app will think title from script" class="w-full mt-1 px-3 py-2 rounded-xl border text-xs bg-white dark:bg-slate-900" /></label>
       <label class="text-[11px]">Paste script / transcript here <textarea id="transcriptScriptInputV092" rows="5" placeholder="Paste transcript from TranscriptMagic here..." class="w-full mt-1 px-3 py-2 rounded-xl border text-xs bg-white dark:bg-slate-900 whitespace-pre-wrap"></textarea></label>
       <div class="flex gap-2">
         <button onclick="saveTranscriptAsMaterialV092()" class="px-4 py-2 rounded-xl bg-brand-500 text-white text-xs font-bold">Save as Material</button>
@@ -5915,21 +5914,17 @@ function thinkTitleAndGradeWithGeminiV092(script){
   });
 }
 async function saveTranscriptAsMaterialV092(){   try{
-    var title=(document.getElementById('transcriptTitleInputV092')?.value||'').trim();
+    var title='';
     var script=(document.getElementById('transcriptScriptInputV092')?.value||'').trim();
     var st=document.getElementById('transcriptStatusV092');
     if(!script){ if(st) st.textContent='Paste the script first.'; showToastV092('Paste the script first.', 'warn'); return; }
-    // APP THINKS TITLE + GRADE - user does NOT have to type title, and never types grade
-    if(!title){
-      if(st) st.textContent='App is thinking title + grade from script...';
-      var thought=await thinkTitleAndGradeWithGeminiV092(script);
-      title=thought.title||('Transcript Material - '+new Date().toLocaleDateString());
-      // If Gemini thought a grade, record it as a vote so ranking uses it even without explicit Kelas IX in text
-      if(thought.grade && thought.grade>=1 && thought.grade<=12){
-        try{ recordGradeVoteV092(thought.grade, {semester:thought.semester, ta:thought.tahunAjaran, curriculum:thought.curriculum}, 'transcript-gemini-think'); }catch(e){}
-      }
-      // Also fill the input so user sees what app thought
-      var titleInput=document.getElementById('transcriptTitleInputV092'); if(titleInput) titleInput.value=title;
+    // APP THINKS TITLE + GRADE - no title field, title is always auto-generated from script
+    if(st) st.textContent='App is thinking title + grade from script...';
+    var thought=await thinkTitleAndGradeWithGeminiV092(script);
+    title=thought.title||('Transcript Material - '+new Date().toLocaleDateString());
+    // If Gemini thought a grade, record it as a vote so ranking uses it even without explicit Kelas IX in text
+    if(thought.grade && thought.grade>=1 && thought.grade<=12){
+      try{ recordGradeVoteV092(thought.grade, {semester:thought.semester, ta:thought.tahunAjaran, curriculum:thought.curriculum}, 'transcript-gemini-think'); }catch(e){}
     }
     var mat={title:title, content:script, type:'transcript', source:'transcriptmagic', at:Date.now()};
     if(typeof materials!=='undefined' && Array.isArray(materials)){ materials.push(mat); }
@@ -5940,7 +5935,7 @@ async function saveTranscriptAsMaterialV092(){   try{
     var cont=document.getElementById('materialListContainer');
     if(cont){ var div=document.createElement('div'); div.className='p-3 rounded-xl bg-white dark:bg-slate-900 border text-xs'; div.innerHTML='<b>'+title.replace(/</g,'&lt;')+'</b><p class="text-slate-400">Transcript via TranscriptMagic - '+script.length+' chars</p>'; cont.prepend(div); }
   }catch(e){ showToastV092('Save failed: '+e.message, 'error'); } }
-function clearTranscriptInputsV092(){ try{ var a=document.getElementById('transcriptTitleInputV092'); if(a) a.value=''; var b=document.getElementById('transcriptScriptInputV092'); if(b) b.value=''; var st=document.getElementById('transcriptStatusV092'); if(st) st.textContent=''; }catch(e){} }
+function clearTranscriptInputsV092(){ try{ var b=document.getElementById('transcriptScriptInputV092'); if(b) b.value=''; var st=document.getElementById('transcriptStatusV092'); if(st) st.textContent=''; }catch(e){} }
 function ensureAutoSaveV092(){
   try{
     if(window._sfAutoSaveStartedV092) return; window._sfAutoSaveStartedV092=true;
