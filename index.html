@@ -119,8 +119,36 @@
         #healthReminderOverlay p, #healthReminderOverlay div { color: #fff; }
         #studyLockOverlay { background: rgba(0,0,0,0.85); }
 </style>
-</head>
-<body id="bodyRoot" class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 min-h-screen font-sans pb-20 md:pb-0 relative overflow-x-hidden">
+
+
+<style id="layout-fix-v092">
+  /* V0.92: sidebar sticky like V0.79, no gap between sidebar and content */
+  html,body{ box-sizing:border-box; }
+  *,*::before,*::after{ box-sizing:border-box; }
+  #appContainer{ display:flex; flex-direction:column; width:100%; min-height:100vh; }
+  @media (min-width: 768px) {
+    /* Keep layout as flex row; sidebar sticky and full height, flush with content */
+    #appContainer > .flex {
+      align-items: flex-start;
+    }
+    aside.sticky {
+      position: sticky !important;
+      top: 65px !important;
+      height: calc(100vh - 65px) !important;
+      align-self: flex-start;
+      flex-shrink: 0;
+      z-index: 20;
+    }
+    /* Hide sidebar scrollbar visually so no white strip appears */
+    aside.sticky::-webkit-scrollbar { width: 0; height: 0; }
+    aside.sticky { scrollbar-width: none; }
+  }
+  .glass-panel{ max-width:100%; }
+</style>
+
+<script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script></head>
+<body id="bodyRoot" class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 min-h-screen font-sans pb-20 md:pb-0 relative">
 
     <!-- FNF Style Animated Side Vertical Stacked Text Overlay (Behind Navbar: z-30) -->
     <div id="fnfSideBanner" class="hidden fixed right-0 top-0 bottom-0 z-30 pointer-events-none flex flex-col items-end justify-start overflow-hidden w-16 sm:w-20 opacity-95 select-none">
@@ -178,6 +206,14 @@
                 </div>
                 <button type="submit" id="authSubmitBtn" class="w-full py-3 bg-brand-500 hover:bg-brand-600 text-white font-bold rounded-xl text-sm shadow-lg shadow-brand-500/20 transition-all">Login to Dashboard</button>
             </form>
+            <div class="space-y-2">
+                <div class="flex items-center gap-3"><div class="flex-1 h-px bg-slate-200 dark:bg-slate-800"></div><span class="text-[11px] text-slate-400 font-bold">OR</span><div class="flex-1 h-px bg-slate-200 dark:bg-slate-800"></div></div>
+                <button type="button" onclick="signInWithGoogleAuthModalV092()" class="w-full px-4 py-3 rounded-xl bg-white border border-slate-300 text-slate-700 text-sm font-bold flex items-center justify-center gap-2 hover:bg-slate-50">
+                    <span class="w-6 h-6 rounded-full bg-white border flex items-center justify-center text-sm font-black text-slate-700">G</span>
+                    <span id="authGoogleBtnText">Continue with Google</span>
+                </button>
+                <p id="authGoogleStatus" class="text-[11px] text-slate-400 text-center">Use Google for Login or Sign Up — same button.</p>
+            </div>
 
             <!-- Import Account Container (Hidden by default) -->
             <div id="authImportContainer" class="hidden space-y-4 text-center py-2">
@@ -215,7 +251,7 @@
                 <i class="fa-solid fa-cloud-arrow-up w-5 text-center text-sm"></i><span>Materials</span>
             </button>
             <button onclick="switchTabMobile('homework')" class="w-full px-4 py-3 rounded-xl font-semibold text-xs transition-all text-slate-600 dark:text-slate-300 hover:bg-white/40 dark:hover:bg-slate-800/40 flex items-center space-x-3">
-                <i class="fa-solid fa-book-open-reader w-5 text-center text-sm"></i><span>Homework Helper</span>
+                <i class="fa-solid fa-book-open-reader w-5 text-center text-sm"></i><span>Math Breaker</span>
             </button>
             <button onclick="switchTabMobile('decks')" class="w-full px-4 py-3 rounded-xl font-semibold text-xs transition-all text-slate-600 dark:text-slate-300 hover:bg-white/40 dark:hover:bg-slate-800/40 flex items-center space-x-3">
                 <i class="fa-solid fa-clone w-5 text-center text-sm"></i><span>Flashcards</span>
@@ -265,7 +301,7 @@
                 </div>
                 <div class="hidden sm:flex flex-col">
                     <span class="font-extrabold text-base tracking-wide">StudyForge <span class="text-brand-500 text-xs px-2 py-0.5 bg-brand-500/10 rounded-full">AI</span></span>
-                    <span class="text-[10px] font-semibold text-slate-400 -mt-0.5">V. 0.75</span>
+                    <span class="text-[10px] font-semibold text-slate-400 -mt-0.5">V. 0.92</span>
                 </div>
             </div>
             <div class="flex items-center space-x-2 sm:space-x-3">
@@ -303,7 +339,7 @@
         <div class="flex flex-1">
             
             <!-- Desktop Sidebar Navigation -->
-            <aside class="w-64 glass-panel border-r p-4 hidden md:flex flex-col space-y-2 sticky top-[65px] h-[calc(100vh-65px)] overflow-y-auto">
+            <aside class="w-64 shrink-0 glass-panel border-r p-4 hidden md:flex flex-col space-y-2 sticky top-[65px] h-[calc(100vh-65px)] overflow-y-auto">
                 <div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-3 mb-1">Menu</div>
                 
                 <button onclick="switchTab('overview')" id="sidebar-overview" class="w-full px-4 py-3 rounded-xl font-semibold text-xs transition-all bg-brand-500 text-white shadow-md shadow-brand-500/20 flex items-center space-x-3">
@@ -313,7 +349,7 @@
                     <i class="fa-solid fa-cloud-arrow-up w-5 text-center text-sm"></i><span>Materials</span>
                 </button>
                 <button onclick="switchTab('homework')" id="sidebar-homework" class="w-full px-4 py-3 rounded-xl font-semibold text-xs transition-all text-slate-600 dark:text-slate-300 hover:bg-white/40 dark:hover:bg-slate-800/40 flex items-center space-x-3">
-                    <i class="fa-solid fa-book-open-reader w-5 text-center text-sm"></i><span>Homework Helper</span>
+                    <i class="fa-solid fa-book-open-reader w-5 text-center text-sm"></i><span>Math Breaker</span>
                 </button>
                 <button onclick="switchTab('decks')" id="sidebar-decks" class="w-full px-4 py-3 rounded-xl font-semibold text-xs transition-all text-slate-600 dark:text-slate-300 hover:bg-white/40 dark:hover:bg-slate-800/40 flex items-center space-x-3">
                     <i class="fa-solid fa-clone w-5 text-center text-sm"></i><span>Flashcards</span>
@@ -344,13 +380,16 @@
                 <button onclick="switchTab('profile')" id="sidebar-profile" class="w-full px-4 py-3 rounded-xl font-semibold text-xs transition-all text-slate-600 dark:text-slate-300 hover:bg-white/40 dark:hover:bg-slate-800/40 flex items-center space-x-3">
                     <i class="fa-solid fa-user w-5 text-center text-sm"></i><span>Profile & Stats</span>
                 </button>
+                <button onclick="switchTab('leaderboard')" id="sidebar-leaderboard" class="w-full px-4 py-3 rounded-xl font-semibold text-xs transition-all text-slate-600 dark:text-slate-300 hover:bg-white/40 dark:hover:bg-slate-800/40 flex items-center space-x-3">
+                    <i class="fa-solid fa-trophy w-5 text-center text-sm text-amber-500"></i><span>Leaderboard</span>
+                </button>
                 <button onclick="switchTab('socials')" id="sidebar-socials" class="w-full px-4 py-3 rounded-xl font-semibold text-xs transition-all text-indigo-500 hover:bg-indigo-500/10 flex items-center space-x-3">
                     <i class="fa-solid fa-heart w-5 text-center text-sm"></i><span>Support My Socials</span>
                 </button>
             </aside>
 
             <!-- Main Body -->
-            <main class="flex-1 p-4 sm:p-6 max-w-5xl mx-auto space-y-6">
+            <main class="flex-1 min-w-0 p-4 sm:p-6 max-w-5xl mx-auto space-y-6">
 
                 <!-- TAB: OVERVIEW -->
                 <div id="content-overview" class="space-y-6">
@@ -361,7 +400,7 @@
                             <p class="text-xs text-slate-700 dark:text-slate-300 max-w-md">Your AI assistant is ready to help you convert study materials, break down homework, and boost your cognitive skills.</p>
                         </div>
                         <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-                            <button onclick="switchTab('homework')" class="px-6 py-3 bg-brand-500 hover:bg-brand-600 text-white font-bold rounded-2xl text-xs shadow-lg shadow-brand-500/20 transition-all">Homework Helper</button>
+                            <button onclick="switchTab('homework')" class="px-6 py-3 bg-brand-500 hover:bg-brand-600 text-white font-bold rounded-2xl text-xs shadow-lg shadow-brand-500/20 transition-all">Math Breaker</button>
                             <button onclick="switchTab('upload')" class="px-6 py-3 glass-panel hover:bg-slate-200 dark:hover:bg-slate-800 font-bold rounded-2xl text-xs transition-all">Upload Material</button>
                         </div>
                     </div>
@@ -426,21 +465,31 @@
                         <label class="border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-brand-500 rounded-3xl p-6 sm:p-8 flex flex-col items-center justify-center cursor-pointer transition-all bg-slate-50/50 dark:bg-slate-900/50 text-center">
                             <div class="w-12 h-12 rounded-2xl bg-brand-500/10 text-brand-500 flex items-center justify-center text-lg mb-3 shadow-inner"><i class="fa-solid fa-cloud-arrow-up"></i></div>
                             <span class="font-bold text-xs mb-1">Click to upload files (.docx, .txt, .pdf, .pptx, images)</span>
-                            <span class="text-[10px] text-slate-400">Supports DOCX, TXT, PDF, PPTX + Image OCR via Gemini</span>
-                            <input type="file" multiple accept=".docx,.txt,.pdf,.pptx,image/*" onchange="handleGeneralMaterialUpload(event)" class="hidden">
+                            <span class="text-[10px] text-slate-400">Supports DOCX, TXT, PDF, PPTX + Image OCR + Audio/Video Transcript via Gemini</span>
+                            <input type="file" multiple accept=".docx,.txt,.pdf,.pptx,.xlsx,.mp3,.wav,.mp4,.mov,image/*" onchange="handleGeneralMaterialUpload(event)" class="hidden">
                         </label>
 
                         
-                        <div class="glass-panel p-4 rounded-2xl space-y-3 mt-4">
-                            <h4 class="font-bold text-xs uppercase tracking-widest text-slate-400">YouTube Link (V. 0.79)</h4>
-                            <p class="text-[11px] text-slate-400">Paste a YouTube link, we verify it is YouTube, then send it to Gemini with your prompt.</p>
-                            <div class="flex gap-2">
-                                <input id="ytLinkInput" type="text" placeholder="Paste YouTube link here..." class="flex-1 px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs" />
-                                <button onclick="handleYouTubeLink()" class="px-4 py-2 rounded-xl bg-red-500 text-white text-xs font-bold">Send to Gemini</button>
-                            </div>
-                            <p id="ytLinkStatus" class="text-[11px] text-slate-400"></p>
-                            <div id="ytResult" class="hidden text-xs p-3 rounded-xl bg-slate-50 dark:bg-slate-900 whitespace-pre-wrap max-h-64 overflow-y-auto"></div>
-                        </div>
+                        <div class="glass-panel p-4 rounded-2xl space-y-3 mt-4" id="transcriptMagicMaterialV092">
+      <h4 class="font-bold text-xs uppercase tracking-widest text-slate-400">Transcript as Material — via TranscriptMagic (V. 0.92)</h4>
+      <p class="text-[11px] text-slate-400">No direct YouTube link paste. Use TranscriptMagic to get the script, then paste it here as a material.</p>
+      <ol class="text-[11px] text-slate-500 space-y-1 list-decimal list-inside">
+        <li>Open <a href="https://transcriptmagic.com/youtube/" target="_blank" rel="noopener" class="text-brand-500 underline font-bold">transcriptmagic.com/youtube/</a></li>
+        <li>Paste your YouTube link there</li>
+        <li>Click / press Transcribe</li>
+         <li>Copy the transcript and paste it below</li>
+        
+      </ol>
+      <label class="text-[11px]">Title (optional — app will think it if blank) <input id="transcriptTitleInputV092" type="text" placeholder="Leave blank — app will think title from script" class="w-full mt-1 px-3 py-2 rounded-xl border text-xs bg-white dark:bg-slate-900" /></label>
+      <label class="text-[11px]">Paste script / transcript here <textarea id="transcriptScriptInputV092" rows="5" placeholder="Paste transcript from TranscriptMagic here..." class="w-full mt-1 px-3 py-2 rounded-xl border text-xs bg-white dark:bg-slate-900 whitespace-pre-wrap"></textarea></label>
+      <div class="flex gap-2">
+        <button onclick="saveTranscriptAsMaterialV092()" class="px-4 py-2 rounded-xl bg-brand-500 text-white text-xs font-bold">Save as Material</button>
+        <button onclick="clearTranscriptInputsV092()" class="px-4 py-2 rounded-xl bg-slate-200 dark:bg-slate-800 text-xs font-bold">Clear</button>
+      </div>
+      <p id="transcriptStatusV092" class="text-[11px] text-slate-400"></p>
+      <div id="ytResult" class="hidden text-xs p-3 rounded-xl bg-slate-50 dark:bg-slate-900 whitespace-pre-wrap max-h-64 overflow-y-auto"></div>
+      <div id="gradeDetectorBoxV092" class="hidden p-3 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 text-[11px]"></div>
+    </div>
 <div>
                             <h4 class="font-bold text-xs text-slate-400 uppercase tracking-widest mb-3">IndexedDB Library</h4>
                             <div id="materialListContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -450,12 +499,12 @@
                     </div>
                 </div>
 
-                <!-- TAB: HOMEWORK HELPER -->
+                <!-- TAB: MATH BREAKER -->
                 <div id="content-homework" class="hidden space-y-6">
                     <div class="glass-panel p-6 sm:p-8 rounded-3xl shadow-xl max-w-xl mx-auto space-y-6">
                         <div>
-                            <h3 class="text-lg font-bold mb-1"><i class="fa-solid fa-book-open-reader text-brand-500 mr-2"></i>Homework Helper</h3>
-                            <p class="text-xs text-slate-400">Upload your specific homework assignment (.docx or image/text). Our Socratic AI guide breaks it down step-by-step!</p>
+                            <h3 class="text-lg font-bold mb-1"><i class="fa-solid fa-book-open-reader text-brand-500 mr-2"></i>Math Breaker</h3>
+                            <p class="text-xs text-slate-400">Upload your specific MATH problem (.docx or image/text). Our Socratic AI guide breaks it down step-by-step!</p>
                         </div>
 
                         <div id="hwUploadSection" class="space-y-4">
@@ -463,7 +512,7 @@
                                 <div class="w-12 h-12 rounded-2xl bg-brand-500/10 text-brand-500 flex items-center justify-center text-lg mb-3 shadow-inner"><i class="fa-solid fa-file-arrow-up"></i></div>
                                 <span class="font-bold text-xs mb-1">Upload Homework (.docx, Image, or Document)</span>
                                 <span class="text-[10px] text-slate-400">Math, Physics, Bio, English, or History</span>
-                                <input type="file" accept=".docx,.pdf,.pptx,image/*,.txt" onchange="handleHomeworkUpload(event)" class="hidden">
+                                <input type="file" accept=".docx,.pdf,.pptx,.xlsx,.mp3,.wav,.mp4,.mov,image/*,.txt" onchange="handleMathBreakerUpload(event)" class="hidden">
                             </label>
                         </div>
 
@@ -481,7 +530,7 @@
                         <div id="hwSocraticSection" class="hidden space-y-4">
                             <div class="flex justify-between items-center text-xs border-b border-slate-200 dark:border-slate-800 pb-3">
                                 <span id="hwActiveQuestionBadge" class="font-bold text-brand-500">Working on Problem 1</span>
-                                <button onclick="resetHomeworkHelper()" class="text-slate-400 hover:text-red-500 text-xs font-bold">Start Over</button>
+                                <button onclick="resetMathBreakerHelper()" class="text-slate-400 hover:text-red-500 text-xs font-bold">Start Over</button>
                             </div>
                             
                             <div class="p-4 rounded-2xl bg-slate-100/70 dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800 space-y-1">
@@ -498,10 +547,10 @@
                             </div>
 
                             <div id="hwStepNav" class="flex gap-2">
-                                <button id="hwPrevStepBtn" onclick="prevHomeworkStep()" class="flex-1 py-3 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 font-bold rounded-xl text-xs transition-all">
+                                <button id="hwPrevStepBtn" onclick="prevMathBreakerStep()" class="flex-1 py-3 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 font-bold rounded-xl text-xs transition-all">
                                     Previous Step
                                 </button>
-                                <button id="hwNextStepBtn" onclick="nextHomeworkStep()" class="flex-1 py-3 bg-brand-500 hover:bg-brand-600 text-white font-bold rounded-xl text-xs transition-all shadow-md">
+                                <button id="hwNextStepBtn" onclick="nextMathBreakerStep()" class="flex-1 py-3 bg-brand-500 hover:bg-brand-600 text-white font-bold rounded-xl text-xs transition-all shadow-md">
                                     Next Step
                                 </button>
                             </div>
@@ -510,7 +559,7 @@
                                 <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Your Answer / Response (optional):</label>
                                 <div class="flex flex-col sm:flex-row gap-2">
                                     <input type="text" autocomplete="off" id="hwUserResponseInput" placeholder="Type your answer or response..." class="w-full px-4 py-3 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs focus:outline-none focus:border-brand-500 font-semibold">
-                                    <button onclick="submitHomeworkStep()" class="px-6 py-3 bg-slate-600 hover:bg-slate-700 text-white font-bold rounded-xl text-xs transition-all flex-shrink-0">Check</button>
+                                    <button onclick="submitMathBreakerStep()" class="px-6 py-3 bg-slate-600 hover:bg-slate-700 text-white font-bold rounded-xl text-xs transition-all flex-shrink-0">Check</button>
                                 </div>
                             </div>
 
@@ -535,7 +584,10 @@
                             </button>
                         </div>
 
-                        <div id="deckGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+                        <p id="flashModeStatusV092" class="hidden text-[11px] text-slate-400"></p>
+                          <div id="flashDueInfoV092" class="hidden text-[11px] text-slate-400"></div>
+                          <input id="flashWantedCountV092" type="hidden" value="10">
+                          <div id="deckGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"></div>
                     </div>
 
                     <!-- Deck Generation Loading with Percentage -->
@@ -614,14 +666,27 @@
                             <p id="deckScorePercentText" class="text-2xl font-black text-brand-500">100%</p>
                         </div>
                         <p id="deckXpEarnedText" class="text-xs font-semibold text-amber-500">+20 Coins & +20 XP Earned</p>
-                        <button onclick="closeReviewDeck()" class="w-full py-3 bg-brand-500 hover:bg-brand-600 text-white font-bold rounded-2xl text-xs transition-all">Back to Decks</button>
+                        <p id="deckLockStatusV092" class="text-[11px] text-slate-400 hidden"></p>
+                         <button id="deckRegenerateBtnV092" onclick="regenerateDeckV092()" class="hidden w-full py-3 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-2xl text-xs transition-all shadow-md">Regenerate Deck - Failed + New Cards</button>
+                         <button onclick="closeReviewDeck()" class="w-full py-3 bg-brand-500 hover:bg-brand-600 text-white font-bold rounded-2xl text-xs transition-all">Back to Decks</button>
                     </div>
                 </div>
 
                 <!-- TAB: QUIZZES -->
                 <div id="content-quizzes" class="hidden space-y-6">
-                    <div class="glass-panel p-6 sm:p-8 rounded-3xl shadow-xl max-w-xl mx-auto space-y-6 text-center">
-                        <div id="quizStartContainer" class="space-y-4">
+                    <div class="p-4 rounded-2xl bg-slate-100/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 space-y-3 mt-2" id="quizModeSelectorV092">
+  <h4 class="font-bold text-xs uppercase tracking-widest text-slate-400">Choose Mode — Quiz</h4>
+  
+  <div class="grid grid-cols-2 gap-2">
+    <button onclick="startQuizModeV092('test')" class="px-3 py-2.5 rounded-xl bg-brand-500 text-white text-xs font-bold">Test — No Hints</button>
+    <button onclick="startQuizModeV092('practice')" class="px-3 py-2.5 rounded-xl bg-amber-500 text-white text-xs font-bold">Practice — With Hints</button>
+  </div>
+  <p id="quizModeStatusV092" class="text-[11px] text-slate-400"></p>
+  
+</div>
+
+<div class="glass-panel p-6 sm:p-8 rounded-3xl shadow-xl max-w-xl mx-auto space-y-6 text-center">
+                            <div id="quizStartContainer" class="space-y-4">
                             <div class="w-16 h-16 bg-brand-500/20 text-brand-500 rounded-3xl mx-auto flex items-center justify-center text-2xl shadow-inner"><i class="fa-solid fa-brain"></i></div>
                             <h3 class="text-xl font-bold">Adaptive AI Quiz</h3>
                             <p class="text-xs text-slate-400">Generate a custom multiple-choice quiz derived directly from your uploaded study materials.</p>
@@ -760,20 +825,23 @@
                             <input type="text" id="mindMapTopic" placeholder="Enter a topic, or leave blank to use uploaded materials..." class="w-full px-4 py-3 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs focus:outline-none focus:border-brand-500">
                             <label class="border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-brand-500 rounded-3xl p-6 flex flex-col items-center justify-center cursor-pointer transition-all bg-slate-50/50 dark:bg-slate-900/50 text-center">
                                 <div class="w-10 h-10 rounded-2xl bg-brand-500/10 text-brand-500 flex items-center justify-center text-lg mb-2"><i class="fa-solid fa-cloud-arrow-up"></i></div>
-                                <span class="font-bold text-xs">Or upload a file (.docx, .txt, image)</span>
-                                <input type="file" id="mindMapFileInput" accept=".docx,.txt,.pdf,.pptx,image/*" onchange="handleMindMapUpload(event)" class="hidden">
+                                <span class="font-bold text-xs">Or upload a file (.docx, .txt, image, .mp3, .wav, .mp4, .mov — transcribed by Gemini)</span>
+                                <input type="file" id="mindMapFileInput" accept=".docx,.txt,.pdf,.pptx,.xlsx,.mp3,.wav,.mp4,.mov,image/*" onchange="handleMindMapUpload(event)" class="hidden">
                             </label>
                             <p id="mindMapFileStatus" class="text-[10px] text-slate-400 text-center hidden"></p>
                             <div class="p-4 rounded-2xl bg-slate-100/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 space-y-2 mt-2">
-                                <h4 class="font-bold text-xs uppercase tracking-widest text-slate-400">YouTube Link — Mind Map</h4>
-                                <p class="text-[11px] text-slate-400">Paste a YouTube link, verify it is YouTube, then send to Gemini to make a mind map.</p>
-                                <div class="flex gap-2">
-                                    <input id="ytLinkInputMindMap" type="text" placeholder="Paste YouTube link here..." class="flex-1 px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs" />
-                                    <button onclick="handleYouTubeLinkMindMap()" class="px-4 py-2 rounded-xl bg-red-500 text-white text-xs font-bold whitespace-nowrap">Send to Gemini → Mind Map</button>
-                                </div>
-                                <p id="ytLinkStatusMindMap" class="text-[11px] text-slate-400"></p>
-                                <div id="ytResultMindMap" class="hidden text-xs p-3 rounded-xl bg-white dark:bg-slate-900 whitespace-pre-wrap max-h-64 overflow-y-auto"></div>
-                            </div>
+                                 <h4 class="font-bold text-xs uppercase tracking-widest text-slate-400">Transcript - Mind Map (via TranscriptMagic)</h4>
+                                 <p class="text-[11px] text-slate-400">No direct YouTube link. Use TranscriptMagic to get the script, then paste it here. The app will use it as the source for the mind map.</p>
+                                 <ol class="text-[11px] text-slate-500 space-y-1 list-decimal list-inside">
+                                     <li>Open <a href="https://transcriptmagic.com/youtube/" target="_blank" rel="noopener" class="text-brand-500 underline font-bold">transcriptmagic.com/youtube/</a></li>
+                                     <li>Paste your YouTube link there</li>
+                                     <li>Click / press Transcribe</li>
+                                     <li>Copy the transcript and paste it below, then click Generate Mind Map</li>
+                                 </ol>
+                                 <textarea id="mindMapTranscriptInputV092" rows="4" placeholder="Paste transcript from TranscriptMagic here..." class="w-full px-3 py-2 rounded-xl border text-xs bg-white dark:bg-slate-900 whitespace-pre-wrap"></textarea>
+                                 <button onclick="useTranscriptForMindMapV092()" class="px-4 py-2 rounded-xl bg-brand-500 text-white text-xs font-bold">Use This Transcript</button>
+                                 <p id="mindMapTranscriptStatusV092" class="text-[11px] text-slate-400"></p>
+                             </div>
 
                         </div>
 
@@ -799,7 +867,7 @@
 
                 <!-- TAB: REWARD SHOP -->
                 <div id="content-shop" class="hidden space-y-6">
-                    <div class="glass-panel p-6 sm:p-8 rounded-3xl shadow-xl max-w-4xl mx-auto space-y-6">
+<div class="glass-panel p-6 sm:p-8 rounded-3xl shadow-xl max-w-4xl mx-auto space-y-6">
                         <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                             <div>
                                 <h3 class="text-lg font-bold"><i class="fa-solid fa-store text-amber-500 mr-2"></i>Reward Shop</h3>
@@ -894,7 +962,7 @@
                                     <p class="text-[11px] text-slate-400">Harder missions give bigger rewards. Random 3 from pool of 4.</p>
                                     <div id="missionListContainerV079" class="space-y-4"></div>
                                 </div>
-                                <p class="text-[11px] text-slate-400">V. 0.79 — 3 Quests + 3 Missions = 3+3. Finish all 6 → 1 hour cooldown → new random 3+3.</p>
+                                <p class="text-[11px] text-slate-400">V. 0.92 — 3 Quests + 3 Missions = 3+3. Finish all 6 → 1 hour cooldown → new random 3+3.</p>
                             </div>
                         </div>
 <div id="questCooldownView" class="hidden text-center space-y-4 py-8">
@@ -948,20 +1016,23 @@
                             <label class="border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-brand-500 rounded-3xl p-6 sm:p-8 flex flex-col items-center justify-center cursor-pointer transition-all bg-slate-50/50 dark:bg-slate-900/50 text-center">
                                 <div class="w-12 h-12 rounded-2xl bg-brand-500/10 text-brand-500 flex items-center justify-center text-lg mb-3 shadow-inner"><i class="fa-solid fa-cloud-arrow-up"></i></div>
                                 <span class="font-bold text-xs mb-1">Click to upload (.docx, .txt, .pdf, .pptx, images)</span>
-                                <span class="text-[10px] text-slate-400">Supports DOCX, TXT, PDF text, and Image OCR</span>
-                                <input type="file" id="noteMakerFileInput" accept=".docx,.txt,.pdf,.pptx,image/*" onchange="handleNoteMakerUpload(event)" class="hidden">
+                                <span class="text-[10px] text-slate-400">Supports DOCX, TXT, PDF text, Image OCR, and Audio/Video Transcript via Gemini</span>
+                                <input type="file" id="noteMakerFileInput" accept=".docx,.txt,.pdf,.pptx,.xlsx,.mp3,.wav,.mp4,.mov,image/*" onchange="handleNoteMakerUpload(event)" class="hidden">
                             </label>
                             <p id="noteMakerFileStatus" class="text-[10px] text-slate-400 text-center hidden"></p>
                             <div class="p-4 rounded-2xl bg-slate-100/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 space-y-2 mt-2">
-                                <h4 class="font-bold text-xs uppercase tracking-widest text-slate-400">YouTube Link — Note Maker</h4>
-                                <p class="text-[11px] text-slate-400">Paste a YouTube link, verify it is YouTube, then send to Gemini to make notes.</p>
-                                <div class="flex gap-2">
-                                    <input id="ytLinkInputNoteMaker" type="text" placeholder="Paste YouTube link here..." class="flex-1 px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs" />
-                                    <button onclick="handleYouTubeLinkNoteMaker()" class="px-4 py-2 rounded-xl bg-red-500 text-white text-xs font-bold whitespace-nowrap">Send to Gemini → Notes</button>
-                                </div>
-                                <p id="ytLinkStatusNoteMaker" class="text-[11px] text-slate-400"></p>
-                                <div id="ytResultNoteMaker" class="hidden text-xs p-3 rounded-xl bg-white dark:bg-slate-900 whitespace-pre-wrap max-h-64 overflow-y-auto"></div>
-                            </div>
+                                 <h4 class="font-bold text-xs uppercase tracking-widest text-slate-400">Transcript - Note Maker (via TranscriptMagic)</h4>
+                                 <p class="text-[11px] text-slate-400">No direct YouTube link. Use TranscriptMagic to get the script, then paste it here. The app will use it as the source for notes.</p>
+                                 <ol class="text-[11px] text-slate-500 space-y-1 list-decimal list-inside">
+                                     <li>Open <a href="https://transcriptmagic.com/youtube/" target="_blank" rel="noopener" class="text-brand-500 underline font-bold">transcriptmagic.com/youtube/</a></li>
+                                     <li>Paste your YouTube link there</li>
+                                     <li>Click / press Transcribe</li>
+                                     <li>Copy the transcript and paste it below, then click Generate Notes</li>
+                                 </ol>
+                                 <textarea id="noteMakerTranscriptInputV092" rows="4" placeholder="Paste transcript from TranscriptMagic here..." class="w-full px-3 py-2 rounded-xl border text-xs bg-white dark:bg-slate-900 whitespace-pre-wrap"></textarea>
+                                 <button onclick="useTranscriptForNoteMakerV092()" class="px-4 py-2 rounded-xl bg-brand-500 text-white text-xs font-bold">Use This Transcript</button>
+                                 <p id="noteMakerTranscriptStatusV092" class="text-[11px] text-slate-400"></p>
+                             </div>
 
                         </div>
 
@@ -971,13 +1042,15 @@
                             <select id="noteMakerType" class="w-full px-4 py-3 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs focus:outline-none focus:border-brand-500">
                                 <option value="outline" selected>Outline Notes</option>
                                 <option value="cornell">Cornell Notes</option>
+                                 <option value="summarize">Summarize</option>
                             </select>
                         </div>
 
                         <!-- Generate Button -->
                         <button onclick="generateNotes()" id="noteMakerGenerateBtn" class="w-full py-3.5 bg-brand-500 hover:bg-brand-600 text-white font-bold rounded-2xl text-xs shadow-lg shadow-brand-500/20 transition-all">
-                            ✨ Generate Notes
+                            ✨ Generate / Regenerate Notes
                         </button>
+ <button id="noteMakerRegenerateBtn" onclick="regenerateNoteMakerV092()" class="w-full py-3 bg-purple-500 hover:bg-purple-600 text-white font-bold rounded-xl text-sm shadow-lg shadow-purple-500/20 transition-all">🔄 Regenerate — Same Materials, New Version</button>
 
                         <!-- Progress Area -->
                         <div id="noteMakerProgress" class="hidden space-y-3 py-4">
@@ -1009,6 +1082,7 @@
                     </div>
                 </div>
 
+<div id="content-leaderboard" class="hidden space-y-6"><div class="glass-panel p-6 sm:p-8 rounded-3xl shadow-xl space-y-4"><h3 class="text-lg font-bold">🏆 Leaderboard</h3><p class="text-xs text-slate-400">Sorting: Grade Level → Average Score → Older Learner. Exception: If Grade 1 avg is >70 more than Grade 2 avg, Grade 1 wins.</p><div class="flex gap-2"><input id="friendSearchInput" type="text" placeholder="Search username to add friend..." class="flex-1 px-3 py-2 rounded-xl border text-xs bg-white dark:bg-slate-900"><button onclick="sendFriendRequestV092()" class="px-4 py-2 rounded-xl bg-brand-500 text-white text-xs font-bold">Send Request</button></div><p id="friendStatus" class="text-[11px] text-slate-400"></p><div class="space-y-2"><h4 class="font-bold text-xs">Friend Requests</h4><div id="friendRequestsList" class="space-y-2"><p class="text-[11px] text-slate-400">No requests.</p></div></div><div class="space-y-2"><h4 class="font-bold text-xs">Friends</h4><div id="friendsListV092" class="space-y-2"></div></div><div id="leaderboardList" class="space-y-2"></div><p class="text-[11px] text-slate-400">Your rank: <b id="myLeaderboardRank">-</b></p></div></div>
 <!-- TAB: PROFILE -->
                 <div id="content-profile" class="hidden space-y-6">
                     <div class="glass-panel p-6 sm:p-8 rounded-3xl shadow-xl max-w-xl mx-auto space-y-6">
@@ -1022,7 +1096,7 @@
                             </div>
                         </div>
 
-                        <!-- Google Account - INTEGRATED INSIDE PROFILE, NOT SEPARATE CARD (V0.79 fix) -->
+                        <!-- Google Account - INTEGRATED INSIDE PROFILE, NOT SEPARATE CARD (V0.92 fix) -->
                         <div class="space-y-2 p-4 rounded-2xl bg-slate-100/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800">
                             <div class="flex items-center gap-3">
                                 <div class="w-10 h-10 rounded-full bg-white border flex items-center justify-center text-base font-black text-slate-700 flex-shrink-0">G</div>
@@ -1033,7 +1107,7 @@
                             </div>
                             <button id="profileGoogleConnectBtn" onclick="signInWithGoogleProfile()" class="w-full px-4 py-2.5 rounded-xl bg-white border border-slate-300 text-xs font-bold text-slate-700 hover:bg-slate-50">Connect to Google Account</button>
                             <p class="text-[11px] text-slate-400">Button stays even after connecting — tap again to re-connect / switch account.</p>
-                        </div>
+                        </div><div class="space-y-3 p-4 rounded-2xl bg-slate-100/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800"><h4 class="font-bold text-xs uppercase tracking-widest text-slate-400">Profile Info</h4><div class="grid grid-cols-2 gap-2"><label class="text-xs">Gender<select id="profileGender" class="w-full px-3 py-2 rounded-xl border text-xs bg-white dark:bg-slate-900" onchange="saveProfileExtraV092()"><option value="">Select</option><option value="Male">Male</option><option value="Female">Female</option></select></label><label class="text-xs">Birthday<input id="profileBirthday" type="date" class="w-full px-3 py-2 rounded-xl border text-xs bg-white dark:bg-slate-900" onchange="confirmBirthdayV092(event)"></label></div><p class="text-[11px] text-slate-400">you don't have to put your birthdate's year but it can help us to know how old are you to celebrate your birthday🎉 — Birthday celebrated with day + month even without year. Can be changed once per year.</p><p class="text-[11px] text-slate-400">Longest Streak: <b id="profileLongestStreak">0 days</b> • Current Streak: <b id="profileCurrentStreak">0 days</b></p><p id="profileBirthdayStatus" class="text-[11px] text-slate-400"></p></div>
 <!-- Profile Picture Upload Input -->
                         <div class="space-y-2 p-4 rounded-2xl glass-panel">
                             <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Custom Profile Picture (.gif requires shop unlock)</label>
@@ -1164,7 +1238,7 @@
 
         <div id="wcStateGrade" class="space-y-3">
             <p class="text-xs font-semibold">What grade are you in? We will generate 3 stretch questions 1-2 classes higher for your challenge!</p>
-            <select id="wcGradeSelect" class="w-full px-3 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs focus:outline-none focus:border-brand-500">
+            <select id="wcGradeSelect" disabled title="Grade is determined by app, not manual" class="w-full px-3 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 opacity-70 cursor-not-allowed">
                 <option value="1">Grade 1</option>
                 <option value="2">Grade 2</option>
                 <option value="3">Grade 3</option>
@@ -1229,29 +1303,39 @@
     </div>
 
     <!-- Pre-Gen Modal -->
-    <div id="preGenModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4">
-        <div class="glass-panel p-6 sm:p-8 rounded-3xl w-full max-w-sm shadow-2xl space-y-6 text-center">
-            <div id="preGenStep1" class="space-y-4">
-                <div class="w-12 h-12 bg-brand-500/20 text-brand-500 rounded-2xl mx-auto flex items-center justify-center text-lg"><i class="fa-solid fa-circle-question"></i></div>
-                <h3 class="font-bold text-sm">Choose Mode — Is this for a test?</h3><p class="text-[11px] text-slate-400">Recall Memory = test yourself, no hints. Fix Gaps = hints + focus on weak areas. No = normal practice.</p>
-                <div class="grid grid-cols-2 gap-3">
-                    <button onclick="answerPreGenMode('recall')" class="py-2.5 bg-brand-500 hover:bg-brand-600 text-white font-bold rounded-xl text-xs transition-all">Recall Memory</button>
-                    <button onclick="answerPreGenMode('fixgaps')" class="py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl text-xs transition-all">Fix Gaps</button>
-                    <button onclick="answerPreGenMode('no')" class="py-2.5 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 font-bold rounded-xl text-xs transition-all">No</button>
-                </div>
-            </div>
-            <div id="preGenStep2" class="hidden space-y-4">
-                <div class="w-12 h-12 bg-amber-500/20 text-amber-500 rounded-2xl mx-auto flex items-center justify-center text-lg"><i class="fa-solid fa-brain"></i></div>
-                <h3 class="font-bold text-sm">Do you want to test your recall memory?</h3>
-                <div class="grid grid-cols-2 gap-3">
-                    <button onclick="answerPreGenRecall(true)" class="py-2.5 bg-brand-500 hover:bg-brand-600 text-white font-bold rounded-xl text-xs transition-all">Yes</button>
-                    <button onclick="answerPreGenRecall(false)" class="py-2.5 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 font-bold rounded-xl text-xs transition-all">No</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- AI Tip Modal -->
+    <!-- Pre-Gen Modal - NEW: Generate AI Deck popup with 4 modes + cards input -->
+     <div id="preGenModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4">
+         <div class="glass-panel p-6 sm:p-8 rounded-3xl w-full max-w-md shadow-2xl space-y-5 text-center max-h-[90vh] overflow-y-auto">
+             <!-- DECK MODE SECTION -->
+             <div id="preGenDeckSection" class="space-y-4">
+                 <div class="w-12 h-12 bg-brand-500/20 text-brand-500 rounded-2xl mx-auto flex items-center justify-center text-lg"><i class="fa-solid fa-layer-group"></i></div>
+                 <h3 class="font-bold text-base">Choose Mode - Flashcards</h3>
+                 <div class="grid grid-cols-2 gap-2">
+                     <button id="deckModeBtn-recall" onclick="selectDeckModeV092('recall')" class="py-2.5 px-2 rounded-xl bg-brand-500 text-white text-xs font-bold transition-all">Recall Memory</button>
+                     <button id="deckModeBtn-fixgaps" onclick="selectDeckModeV092('fixgaps')" class="py-2.5 px-2 rounded-xl bg-amber-500 text-white text-xs font-bold transition-all">Fix Gaps</button>
+                     <button id="deckModeBtn-repetition" onclick="selectDeckModeV092('repetition')" class="py-2.5 px-2 rounded-xl bg-purple-500 text-white text-xs font-bold transition-all">Repetition</button>
+                     <button id="deckModeBtn-no" onclick="selectDeckModeV092('no')" class="py-2.5 px-2 rounded-xl bg-slate-800 text-white text-xs font-bold transition-all">No / Free</button>
+                 </div>
+                 <p id="deckModeExplainV092" class="text-[11px] text-slate-400 leading-relaxed min-h-[36px]">Pick a mode above to see how it works.</p>
+                 <div class="flex gap-2 items-center justify-center">
+                     <label class="text-[12px] font-semibold">How many CARDS? <input id="deckModeCardsV092" type="number" value="10" min="1" max="50" class="w-20 px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 text-sm font-bold text-center"></label>
+                 </div>
+                 <button onclick="confirmDeckModeAndGenerateV092()" class="w-full py-3 bg-brand-500 hover:bg-brand-600 text-white font-bold rounded-xl text-xs transition-all shadow-md">Generate Deck</button>
+                 <button onclick="closePreGenModal()" class="w-full py-2.5 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-100 font-bold rounded-xl text-xs transition-all">Cancel</button>
+             </div>
+             <!-- QUIZ SECTION -->
+             <div id="preGenQuizSection" class="hidden space-y-4">
+                 <div class="w-12 h-12 bg-brand-500/20 text-brand-500 rounded-2xl mx-auto flex items-center justify-center text-lg"><i class="fa-solid fa-circle-question"></i></div>
+                 <h3 class="font-bold text-sm">Start Quiz Challenge?</h3>
+                 <p class="text-[11px] text-slate-400">Generate a quiz from your materials.</p>
+                 <div class="grid grid-cols-2 gap-3">
+                     <button onclick="closePreGenModal(); executeGeneration();" class="py-2.5 bg-brand-500 hover:bg-brand-600 text-white font-bold rounded-xl text-xs transition-all">Generate Quiz</button>
+                     <button onclick="closePreGenModal()" class="py-2.5 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 font-bold rounded-xl text-xs transition-all text-slate-800 dark:text-slate-100">Cancel</button>
+                 </div>
+             </div>
+         </div>
+     </div>
+     <!-- AI Tip Modal -->
     <div id="aiTipModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4">
         <div class="glass-panel p-6 rounded-3xl w-full max-w-sm shadow-2xl space-y-4 text-center">
             <div class="w-12 h-12 bg-amber-500/20 text-amber-500 rounded-2xl mx-auto flex items-center justify-center text-lg"><i class="fa-solid fa-lightbulb"></i></div>
@@ -1267,7 +1351,7 @@
             <button onclick="closeSettingsModal()" class="absolute top-6 right-6 text-slate-400 hover:text-slate-100"><i class="fa-solid fa-xmark"></i></button>
             <h3 class="text-lg font-bold">Settings & Customization
                         <div class="glass-panel p-4 rounded-2xl space-y-3 mt-4">
-                            <h4 class="font-bold text-xs uppercase tracking-widest text-slate-400">Google Account (V. 0.79)</h4>
+                            <h4 class="font-bold text-xs uppercase tracking-widest text-slate-400">Google Account (V. 0.92)</h4>
                             <p class="text-[11px] text-slate-400">Sign in with Google. If your transfer file contains the same Gmail, we auto-link and transfer your local data.</p>
                             <button id="googleSignInBtn" onclick="signInWithGoogle()" class="w-full px-4 py-2 rounded-xl bg-white border border-slate-300 text-xs font-bold text-slate-700">Sign in with Google</button>
                             <p id="googleStatus" class="text-[11px] text-slate-400">Not signed in with Google.</p>
@@ -1280,6 +1364,7 @@
                 <div>
                     <label class="block text-xs font-semibold mb-1 text-slate-500 dark:text-slate-400">Gemini API Key</label>
                     <input type="password" id="settingsApiKey" onchange="saveApiKey(this.value)" placeholder="AIzaSy..." class="w-full px-4 py-3 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs focus:outline-none focus:border-brand-500">
+                     <p class="text-[11px] text-slate-400 mt-1">Synced with your Google account — same key on all devices when you are signed in with Google. It is saved as part of your account data.</p>
                 </div>
                 <div>
                     <div class="flex justify-between items-center mb-1">
@@ -1676,10 +1761,8 @@
             });
         }
 
-        async function saveApiKey(keyVal) {
-            apiKey = keyVal.trim();
-            await db.settings.put({ username: currentUser, apiKey: apiKey });
-        }
+        async function saveApiKey(keyVal) {             apiKey = keyVal.trim();             await db.settings.put({ username: currentUser, apiKey: apiKey });             // API key is account data too — sync it with Google account (Firebase) like profile/materials/decks
+             try{ if(typeof saveUserToServerV092 === 'function') await saveUserToServerV092(); }catch(e){}         }
 
         function applyTheme(theme) {
             const html = document.getElementById('htmlRoot');
@@ -2030,13 +2113,18 @@
         async function downloadAccountData() {
             if (!currentUser) return;
             try {
+                const localStorageData = {};
+                try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k && k.startsWith('studyforge_')) localStorageData[k]=localStorage.getItem(k); } }catch(e){}
                 const exportData = {
-                    profile: userProfile,
-                    materials: materials,
-                    decks: decks,
+                    version: "0.92", app: "StudyForge",
+                    profile: userProfile, materials: materials, decks: decks,
                     settings: await db.settings.get(currentUser) || {},
+                    localStorageData: localStorageData,
+                    gmail: (localStorage.getItem('studyforge_local_gmail')||'') || (userProfile.googleEmail||''),
+                    googleEmail: (userProfile.googleEmail||'') || (localStorage.getItem('studyforge_local_gmail')||''),
                     exportDate: new Date().toISOString()
                 };
+                try{ exportData.checksum = await computeChecksumV092(buildChecksumPayloadV092(exportData)); }catch(e){}
                 const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportData, null, 2));
                 const downloadAnchor = document.createElement('a');
                 downloadAnchor.setAttribute("href", dataStr);
@@ -2143,15 +2231,15 @@
             }
             hideFnfBanner();
 
-            ['overview', 'upload', 'homework', 'decks', 'quizzes', 'wordgame', 'notemaker', 'mindmap', 'quests', 'socials', 'shop', 'profile'].forEach(t => {
+            ['overview', 'upload', 'homework', 'decks', 'quizzes', 'wordgame', 'notemaker', 'mindmap', 'quests', 'socials', 'shop', 'profile', 'leaderboard'].forEach(t => {
                 const btn = document.getElementById(`sidebar-${t}`);
                 const content = document.getElementById(`content-${t}`);
                 if (t === tabId) {
                     if (btn) btn.className = "w-full px-4 py-3 rounded-xl font-semibold text-xs transition-all bg-brand-500 text-white shadow-md shadow-brand-500/20 flex items-center space-x-3";
-                    content.classList.remove('hidden');
+                    if(content) content.classList.remove('hidden');
                 } else {
                     if (btn) btn.className = "w-full px-4 py-3 rounded-xl font-semibold text-xs transition-all text-slate-600 dark:text-slate-300 hover:bg-white/40 dark:hover:bg-slate-800/40 flex items-center space-x-3";
-                    content.classList.add('hidden');
+                    if(content) content.classList.add('hidden');
                 }
             });
 
@@ -2165,6 +2253,10 @@
                     }
                 }
             });
+
+            // V0.92 fix: track current tab for Gemini Chat FAB and related logic
+            window._sfCurrentTabV092 = tabId;
+            try { if (typeof updateGeminiChatVisibilityV092 === 'function') updateGeminiChatVisibilityV092(tabId); } catch(e) {}
         }
 
 
@@ -2414,7 +2506,7 @@
         function dismissWeeklyPopup() { document.getElementById('weeklyChallengePopup').classList.add('hidden'); }
 
         async function startWeeklyChallenge() {
-            const grade = document.getElementById('wcGradeSelect').value;
+            const grade = String(getGradeLevelV092()); // APP DETERMINES GRADE
             userProfile.userGrade = grade;
             await saveAccountData();
 
@@ -2545,6 +2637,13 @@ Do not include any other text.`;
 
                 const res = await callGeminiApi(prompt);
                 let data = parseAiJson(res.text);
+                if (data && (data.notMath === true || (Array.isArray(data) && data[0] && data[0].notMath))) {
+                  document.getElementById('hwLoadingSection').classList.add('hidden');
+                  if (typeof showToastV092 === 'function') showToastV092('Math Breaker only works for math.', 'error');
+                  else alert('Math Breaker only works for math.');
+                  resetMathBreakerHelper();
+                  return;
+                }
                 // Handle if AI returned an array by mistake
                 if (Array.isArray(data)) data = data[0];
                 if (!data || !data.word || !data.clue) {
@@ -2679,6 +2778,9 @@ Do not include any other text.`;
                 const isImage = file.type.startsWith('image/') || /\.(png|jpe?g|gif|webp|bmp|tiff?)$/i.test(fileName);
                 const isDocx = fileName.endsWith('.docx');
                 const isPdf = fileName.endsWith('.pdf');
+                 const isAudioVideo = (typeof isAudioVideoFileV092 === 'function' ? isAudioVideoFileV092(file) : false);
+                 const isPptx = fileName.endsWith('.pptx');
+                 const isXlsx = fileName.endsWith('.xlsx') || fileName.endsWith('.xls');
 
                 try {
                     if (isImage) {
@@ -2718,6 +2820,26 @@ Do not include any other text.`;
                             size: (file.size / 1024).toFixed(1) + ' KB',
                             content: pdfText
                         });
+                    } else if (isPptx) {
+                         listContainer.innerHTML = `<p class="text-xs text-brand-500 col-span-2 font-semibold"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Extracting PPTX "${file.name}"...</p>`;
+                         const pptxText = await extractTextFromPPTX(file);
+                         if (!pptxText || pptxText.length < 2) { alert(`No text found in PPTX: ${file.name}`); listContainer.innerHTML = originalHtml; continue; }
+                         await db.materials.add({ username: currentUser, name: file.name + " (PPTX)", size: (file.size / 1024).toFixed(1) + ' KB', content: pptxText });
+                         materials = await db.materials.where('username').equals(currentUser).toArray(); renderMaterials(); continue;
+                     } else if (isXlsx) {
+                         listContainer.innerHTML = `<p class="text-xs text-brand-500 col-span-2 font-semibold"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Extracting XLSX "${file.name}"...</p>`;
+                         const xlsxText = await extractTextFromXLSX(file);
+                         if (!xlsxText || xlsxText.length < 2) { alert(`No text found in XLSX: ${file.name}`); listContainer.innerHTML = originalHtml; continue; }
+                         await db.materials.add({ username: currentUser, name: file.name + " (XLSX)", size: (file.size / 1024).toFixed(1) + ' KB', content: xlsxText });
+                         materials = await db.materials.where('username').equals(currentUser).toArray(); renderMaterials(); continue;
+                     } else if (isAudioVideo) {
+                        if (!apiKey) { alert("Audio/Video transcription requires a Gemini API Key. Please set it in Settings first."); openSettingsModal(); listContainer.innerHTML = originalHtml; continue; }
+                        if (file.size > 20 * 1024 * 1024) { alert("Audio/Video file too large for Gemini inline transcription (max ~20 MB). Please trim / split to under 20 MB, or use TranscriptMagic for YouTube."); listContainer.innerHTML = originalHtml; continue; }
+                        listContainer.innerHTML = `<p class="text-xs text-brand-500 col-span-2 font-semibold"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Transcribing "${file.name}" with Gemini...</p>`;
+                        const transcript = await extractTextFromAudioVideo(file);
+                        if (!transcript || transcript.length < 2) { alert(`No speech found in: ${file.name}`); listContainer.innerHTML = originalHtml; continue; }
+                        await db.materials.add({ username: currentUser, name: file.name + " (Transcript)", size: (file.size / 1024).toFixed(1) + ' KB', content: transcript });
+                        materials = await db.materials.where('username').equals(currentUser).toArray(); renderMaterials(); continue;
                     } else {
                         // Plain text / other
                         const textContent = await file.text();
@@ -2800,7 +2922,7 @@ Do not include any other text.`;
             updateStats();
         }
 
-        async function handleHomeworkUpload(event) {
+        async function handleMathBreakerUpload(event) {
             const file = event.target.files[0];
             if (!file) return;
             if (!apiKey) { alert("Configure your Gemini API Key in Settings first!"); openSettingsModal(); return; }
@@ -2812,6 +2934,9 @@ Do not include any other text.`;
             const isImage = file.type.startsWith('image/') || /\.(png|jpe?g|gif|webp|bmp|tiff?)$/i.test(fileName);
             const isDocx = fileName.endsWith('.docx');
             const isPdf = fileName.endsWith('.pdf');
+                 const isAudioVideo = (typeof isAudioVideoFileV092 === 'function' ? isAudioVideoFileV092(file) : false);
+                 const isPptx = fileName.endsWith('.pptx');
+                 const isXlsx = fileName.endsWith('.xlsx') || fileName.endsWith('.xls');
 
             try {
                 let textContent = '';
@@ -2826,20 +2951,27 @@ Do not include any other text.`;
                     textContent = result.value;
                 } else if (isPdf) {
                     textContent = await extractTextFromPDF(file);
+                } else if (isPptx) {
+                    textContent = await extractTextFromPPTX(file);
+                } else if (isXlsx) {
+                    textContent = await extractTextFromXLSX(file);
+                } else if (isAudioVideo) {
+                    if (file.size > 20 * 1024 * 1024) { throw new Error("Audio/Video file too large for Gemini inline transcription (max ~20 MB). Please trim / split to under 20 MB."); }
+                    textContent = await extractTextFromAudioVideo(file);
                 } else {
                     textContent = await file.text();
                 }
-                await processHomeworkText(textContent);
+                await processMathBreakerText(textContent);
             } catch (err) {
                 alert("Error processing homework: " + err.message);
-                resetHomeworkHelper();
+                resetMathBreakerHelper();
             }
             event.target.value = '';
         }
 
-        async function processHomeworkText(textContent) {
+        async function processMathBreakerText(textContent) {
             try {
-                const prompt = `Read the following homework text carefully. Find every question and any answer that is already provided.
+                const prompt = `You are Math Breaker. You ONLY work for MATH problems. If NOT math, return EXACTLY: {"notMath": true} and do NOT solve. If IS math, solve step-by-step. Read the following math problem text carefully. Find every question and any answer that is already provided.
 
 Return ONLY a valid JSON array of objects. Each object must have these exact keys:
 - "question": the full question text (clean, without options mixed in)
@@ -2858,7 +2990,22 @@ ${textContent}`;
 
                 const aiRes = await callGeminiApi(prompt);
                 let parsed = parseAiJson(aiRes.text);
+                // V0.92 FIX: enforce notMath, prompt alone was not enough
+                if (parsed && (parsed.notMath === true || (parsed[0] && parsed[0].notMath === true))) {
+                  document.getElementById('hwLoadingSection').classList.add('hidden');
+                  if (typeof showToastV092 === 'function') showToastV092('Math Breaker only works for math. This file is not math.', 'error');
+                  else alert('Math Breaker only works for math. This file is not math.');
+                  resetMathBreakerHelper();
+                  return;
+                }
                 if (!Array.isArray(parsed)) parsed = [parsed];
+                parsed = parsed.filter(function(q){ return !(q && q.notMath === true); });
+                if (!parsed.length) {
+                  document.getElementById('hwLoadingSection').classList.add('hidden');
+                  if (typeof showToastV092 === 'function') showToastV092('Math Breaker only works for math.', 'error');
+                  resetMathBreakerHelper();
+                  return;
+                }
 
                 hwParsedQuestions = parsed.map(q => ({
                     question: q.question || String(q),
@@ -2869,14 +3016,14 @@ ${textContent}`;
 
                 hwCompletedIndices.clear();
                 document.getElementById('hwLoadingSection').classList.add('hidden');
-                renderHomeworkQuestionsList();
+                renderMathBreakerQuestionsList();
             } catch (err) {
                 alert("Error parsing homework: " + err.message);
-                resetHomeworkHelper();
+                resetMathBreakerHelper();
             }
         }
 
-        function renderHomeworkQuestionsList() {
+        function renderMathBreakerQuestionsList() {
             const list = document.getElementById('hwQuestionsList');
             if (!list) return;
 
@@ -2891,7 +3038,7 @@ ${textContent}`;
                     <div class="text-center space-y-3 py-4">
                         <div class="w-12 h-12 bg-emerald-500/20 text-emerald-500 rounded-2xl mx-auto flex items-center justify-center text-xl"><i class="fa-solid fa-check"></i></div>
                         <p class="text-xs font-bold text-emerald-500">All questions completed! Great job.</p>
-                        <button onclick="resetHomeworkHelper()" class="px-4 py-2 bg-brand-500 text-white font-bold rounded-xl text-xs">Start New Homework</button>
+                        <button onclick="resetMathBreakerHelper()" class="px-4 py-2 bg-brand-500 text-white font-bold rounded-xl text-xs">Start New Homework</button>
                     </div>`;
                 document.getElementById('hwSelectQuestionSection').classList.remove('hidden');
                 document.getElementById('hwSocraticSection').classList.add('hidden');
@@ -2934,7 +3081,7 @@ ${textContent}`;
             let prompt = "";
             if (qObj.type === "multiple-choice") {
                 const opts = (qObj.options || []).map((o, idx) => `${String.fromCharCode(65 + idx)}. ${o}`).join("\n");
-                prompt = `You are a helpful tutor. The student has this multiple-choice question.
+                prompt = `You are Math Breaker. You ONLY work for MATH problems. If NOT math, return EXACTLY: {"notMath": true} and do NOT solve. The student has this multiple-choice question.
 
 Question: ${hwActiveQuestion}
 Options:
@@ -2957,7 +3104,7 @@ Rules:
 - Do not put all steps in one string.
 - The finalAnswer should clearly state the correct option.`;
             } else {
-                prompt = `You are a helpful tutor. The student has this written-answer question.
+                prompt = `You are Math Breaker. You ONLY work for MATH problems. If NOT math, return EXACTLY: {"notMath": true} and do NOT solve. The student has this written-answer question.
 
 Question: ${hwActiveQuestion}
 ${qObj.answer ? `The expected answer already in the document is: ${qObj.answer}` : "No answer was provided in the document. You must produce a clear correct written answer."}
@@ -2990,17 +3137,17 @@ Rules:
                     hwCurrentSteps.push("Final Answer: " + data.finalAnswer);
                 }
                 hwCurrentStepIndex = 0;
-                showCurrentHomeworkStep();
+                showCurrentMathBreakerStep();
                 document.getElementById('hwLoadingSection').classList.add('hidden');
                 document.getElementById('hwSocraticSection').classList.remove('hidden');
             } catch (err) { 
                 alert("Error: " + err.message); 
                 document.getElementById('hwLoadingSection').classList.add('hidden');
-                renderHomeworkQuestionsList();
+                renderMathBreakerQuestionsList();
             }
         }
 
-        function showCurrentHomeworkStep() {
+        function showCurrentMathBreakerStep() {
             const textEl = document.getElementById('hwAiPromptText');
             const counterEl = document.getElementById('hwStepCounter');
             const nextBtn = document.getElementById('hwNextStepBtn');
@@ -3026,26 +3173,26 @@ Rules:
                 if (responseArea) responseArea.classList.remove('hidden');
             } else {
                 nextBtn.textContent = "Next Step";
-                nextBtn.onclick = nextHomeworkStep;
+                nextBtn.onclick = nextMathBreakerStep;
                 if (responseArea) responseArea.classList.add('hidden');
             }
         }
 
-        function nextHomeworkStep() {
+        function nextMathBreakerStep() {
             if (hwCurrentStepIndex < hwCurrentSteps.length - 1) {
                 hwCurrentStepIndex++;
-                showCurrentHomeworkStep();
+                showCurrentMathBreakerStep();
             }
         }
 
-        function prevHomeworkStep() {
+        function prevMathBreakerStep() {
             if (hwCurrentStepIndex > 0) {
                 hwCurrentStepIndex--;
-                showCurrentHomeworkStep();
+                showCurrentMathBreakerStep();
             }
         }
 
-        async function submitHomeworkStep() {
+        async function submitMathBreakerStep() {
             const userAns = document.getElementById('hwUserResponseInput').value.trim();
             if (!userAns) return;
             document.getElementById('hwUserResponseInput').value = '';
@@ -3072,10 +3219,10 @@ Rules:
             hwCurrentSteps = [];
             hwCurrentStepIndex = 0;
             document.getElementById('hwSocraticSection').classList.add('hidden');
-            renderHomeworkQuestionsList();
+            renderMathBreakerQuestionsList();
         }
 
-        function resetHomeworkHelper() {
+        function resetMathBreakerHelper() {
             hwCompletedIndices.clear();
             hwActiveQuestionIndex = -1;
             hwActiveQuestion = "";
@@ -3094,11 +3241,51 @@ Rules:
         }
 
         function triggerPreGenFlow(type) {
-            pendingPreGenType = type;
-            document.getElementById('preGenStep1').classList.remove('hidden');
-            document.getElementById('preGenStep2').classList.add('hidden');
-            document.getElementById('preGenModal').classList.remove('hidden');
-        }
+             pendingPreGenType = type;
+             window._sfDeckModeChoice = null;
+             const deckSec = document.getElementById('preGenDeckSection');
+             const quizSec = document.getElementById('preGenQuizSection');
+             if (deckSec) deckSec.classList.toggle('hidden', type !== 'deck');
+             if (quizSec) quizSec.classList.toggle('hidden', type !== 'quiz');
+             const explain = document.getElementById('deckModeExplainV092');
+             if (explain) explain.textContent = "Pick a mode above to see how it works.";
+             ['recall','fixgaps','repetition','no'].forEach(function(m){
+               const b = document.getElementById('deckModeBtn-' + m);
+               if (b) { b.style.outline = 'none'; b.style.boxShadow = 'none'; }
+             });
+             const cardsEl = document.getElementById('deckModeCardsV092');
+             if (cardsEl) cardsEl.value = 10;
+             document.getElementById('preGenModal').classList.remove('hidden');
+         }
+         function selectDeckModeV092(mode) {
+             window._sfDeckModeChoice = mode;
+             const explains = {
+               recall: "Recall Memory: Play the deck once. After you finish, it asks Repeat again? Yes = same deck again. Deck locks for 10 → 15 → 20 → 25 mins (+5 each time). Wrong = back to 10.",
+               fixgaps: "Fix Gaps: New deck = your failed cards + new cards to fill to the number you set. After you finish a Fix Gaps deck, Regenerate Deck appears to make that new deck.",
+               repetition: "Repetition: Shows only due cards. Wrong = sooner, Right = later (1d → 3d → 7d → 14d). Deck locks for days until due.",
+               no: "No / Free: Normal deck. No lock, no timer. Play anytime."
+             };
+             const ex = document.getElementById('deckModeExplainV092');
+             if (ex) ex.textContent = explains[mode] || "";
+             ['recall','fixgaps','repetition','no'].forEach(function(m){
+               const b = document.getElementById('deckModeBtn-' + m);
+               if (b) { b.style.outline = (m === mode ? '3px solid #fff' : 'none'); b.style.boxShadow = (m === mode ? '0 0 0 3px #10b981' : 'none'); }
+             });
+         }
+         function confirmDeckModeAndGenerateV092() {
+             const mode = window._sfDeckModeChoice;
+             if (!mode) { alert("Pick a mode first - Recall Memory, Fix Gaps, Repetition, or No / Free."); return; }
+             const cardsEl = document.getElementById('deckModeCardsV092');
+             let wanted = parseInt(cardsEl?.value || '10', 10) || 10;
+             wanted = Math.min(50, Math.max(1, wanted));
+             if (cardsEl) cardsEl.value = wanted;
+             const hiddenWanted = document.getElementById('flashWantedCountV092');
+             if (hiddenWanted) hiddenWanted.value = wanted;
+             window._sfFlashV092.mode = mode;
+             window._sfFlashV092.failedList = [];
+             closePreGenModal();
+             if (typeof executeGeneration === 'function') executeGeneration();
+         }
 
         function answerPreGenTest(isYes) {
             if (isYes) {
@@ -3221,6 +3408,45 @@ async function extractTextFromImage(file) {
                 reader.readAsDataURL(file);
             });
         }
+async function extractTextFromAudioVideo(file) {
+  // NEW: Audio / Video -> Transcript material that Gemini can read
+  // Same pattern as extractTextFromImage: send file as inline_data to Gemini, get transcript back as text
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = async function(e) {
+      try {
+        const dataUrl = e.target.result;
+        let mimeType = (file.type || '').toLowerCase();
+        if (mimeType === 'video/quicktime') mimeType = 'video/mov'; // normalize .mov for Gemini
+        const name = (file.name || '').toLowerCase();
+        if (!mimeType) {
+          if (name.endsWith('.mp3')) mimeType = 'audio/mp3';
+          else if (name.endsWith('.wav')) mimeType = 'audio/wav';
+          else if (name.endsWith('.m4a')) mimeType = 'audio/mp4';
+          else if (name.endsWith('.mp4')) mimeType = 'video/mp4';
+          else if (name.endsWith('.mov')) mimeType = 'video/mov'; // Gemini expects video/mov for .mov frame reading, not video/quicktime
+          else mimeType = 'audio/mp3';
+        }
+        const isVideo = mimeType.startsWith('video/');
+        const prompt = isVideo
+          ? "You are given a VIDEO file. Analyze BOTH its audio track AND its video frames. Transcribe this video verbatim in its ORIGINAL language. Do NOT translate. If Indonesian, output Indonesian. If English, output English. If Japanese, output Japanese, etc. Include ALL spoken words, AND read the video frames: transcribe any visible text / slides / whiteboard / diagrams / on-screen labels / handwritten notes in each frame, in order. Return only the transcript + visible text, nothing else."
+          : "Transcribe this audio verbatim in its ORIGINAL language. Do NOT translate. If Indonesian, output Indonesian. If English, output English. If Japanese, output Japanese, etc. Return only the transcript, nothing else.";
+        const res = await callGeminiApi(prompt, dataUrl, mimeType);
+        resolve((res.text || '').trim());
+      } catch (err) { reject(err); }
+    };
+    reader.onerror = () => reject(new Error("Failed to read audio/video file"));
+    reader.readAsDataURL(file);
+  });
+}
+function isAudioVideoFileV092(file) {
+  try {
+    const type = (file.type || '').toLowerCase();
+    const name = (file.name || '').toLowerCase();
+    return type.startsWith('audio/') || type.startsWith('video/') || /\.(mp3|wav|m4a|mp4|mov)$/i.test(name);
+  } catch (e) { return false; }
+}
+
 
         async function extractTextFromPDF(file) {
             return new Promise(async (resolve, reject) => {
@@ -3302,7 +3528,7 @@ async function extractTextFromImage(file) {
         }
 
         async function generateAiFlashcards() {
-            showDeckGenLoading();
+            showDeckGenLoading(); const _wantedCards = (typeof getFlashWantedCount==='function' ? getFlashWantedCount() : 10); const _deckMode = (window._sfFlashV092 && window._sfFlashV092.mode) || 'no';
             try {
                 setDeckGenProgress(15, 'Collecting study materials...');
                 await new Promise(r => setTimeout(r, 200));
@@ -3315,7 +3541,7 @@ async function extractTextFromImage(file) {
                     if (materialContext.length > 28000) {
                         materialContext = materialContext.slice(0, 28000) + "\n\n[...truncated for length...]";
                     }
-                    promptText = `Based on the following study materials, generate a JSON array. IMPORTANT (V0.79 Better Prompt): First reuse questions that appear in the materials file (Kisi-Kisi / Latihan Soal / Essay). If the user has already used all questions from the file (used questions list is provided), then generate NEW AI questions from the same materials with the same topics. Do NOT repeat used questions. Generate a JSON array of exactly 5 flashcards for active recall practice. Each flashcard must contain: {"q":"question", "a":"answer", "readingText":"full reading passage if the question is based on a paragraph, story, article, dialogue, or reading comprehension text; otherwise empty string"}.
+                    promptText = `Based on the following study materials, generate a JSON array. IMPORTANT (V0.92 Better Prompt): First reuse questions that appear in the materials file (Kisi-Kisi / Latihan Soal / Essay). If the user has already used all questions from the file (used questions list is provided), then generate NEW AI questions from the same materials with the same topics. Do NOT repeat used questions. Generate a JSON array of exactly ${_wantedCards} flashcards for active recall practice. Each flashcard must contain: {"q":"question", "a":"answer", "readingText":"full reading passage if the question is based on a paragraph, story, article, dialogue, or reading comprehension text; otherwise empty string"}.
 
 CRITICAL RULES:
 1. ALL questions MUST be open-ended recall questions. NEVER generate multiple-choice questions.
@@ -3329,7 +3555,7 @@ CRITICAL RULES:
 
 Study Materials: ${materialContext}`;
                 } else {
-                    promptText = `Generate a JSON array of exactly 5 open-ended flashcards covering essential study habits and learning strategies. Each object must contain keys "q" and "a". 
+                    promptText = `Generate a JSON array of exactly ${_wantedCards} open-ended flashcards covering essential study habits and learning strategies. Each object must contain keys "q" and "a". 
 IMPORTANT: Questions must be open-ended recall questions only. Do NOT create multiple-choice questions or include any answer options. Return ONLY a valid JSON array, no markdown.`;
                 }
 
@@ -3376,7 +3602,7 @@ IMPORTANT: Questions must be open-ended recall questions only. Do NOT create mul
                 const newDeck = {
                     username: currentUser,
                     title: deckTitle,
-                    desc: materials.length > 0 ? 'Generated from uploaded materials' : 'General Study Deck',
+                    desc: materials.length > 0 ? 'Generated from uploaded materials' : 'General Study Deck', mode: (typeof _deckMode !== 'undefined' ? _deckMode : (window._sfFlashV092 && window._sfFlashV092.mode) || 'no'),
                     cards
                 };
 
@@ -3397,7 +3623,23 @@ alert("✨ Flashcard deck generated successfully!");
         }
 
         function openReviewDeck(idx) {
-            activeReviewDeck = decks[idx];
+            activeReviewDeck = decks[idx]; if (activeReviewDeck && activeReviewDeck.mode) { try { window._sfFlashV092.mode = activeReviewDeck.mode; } catch(e){} }
+             try {
+               const _title = decks[idx]?.title || 'deck';
+               const _lockUntil = parseInt(localStorage.getItem('studyforge_deck_lock_' + _title) || '0', 10) || 0;
+               if (_lockUntil && Date.now() < _lockUntil) {
+                 const _leftMin = Math.ceil((_lockUntil - Date.now()) / 60000);
+                 const _leftDays = (_lockUntil - Date.now()) / (24*60*60*1000);
+                 const _msg = _leftDays >= 1 ? ("Deck '" + _title + "' is locked for Repetition. Come back in " + _leftDays.toFixed(1) + " days.") : ("Deck '" + _title + "' is locked for Recall Memory. Come back in " + _leftMin + " mins.");
+                 alert("Locked: " + _msg);
+                 activeReviewDeck = null;
+                 return;
+               }
+               window._sfFlashV092.failedList = [];
+               const _rb = document.getElementById('deckRegenerateBtnV092'); if (_rb) _rb.classList.add('hidden');
+               const _le = document.getElementById('deckLockStatusV092'); if (_le) _le.classList.add('hidden');
+             } catch(e){}
+
             currentCardIndex = 0; cardMasteredCount = 0; isCardFlipped = false; cardFlipLocked = false;
             document.getElementById('deckMainView').classList.add('hidden');
             document.getElementById('deckResultContainer').classList.add('hidden');
@@ -3454,9 +3696,7 @@ alert("✨ Flashcard deck generated successfully!");
             }
         }
 
-        function recordCardReview(mastered) {
-            if (!activeReviewDeck) return;
-            if (mastered) cardMasteredCount++;
+        function recordCardReview(mastered) { if (!activeReviewDeck) return; if (mastered) { cardMasteredCount++; } else { try { if (!window._sfFlashV092.failedList) window._sfFlashV092.failedList = []; window._sfFlashV092.failedList.push(activeReviewDeck.cards[currentCardIndex]); } catch(e){} }
             const inner = document.getElementById('flashcardInner');
             isCardFlipped = false;
             inner.style.transform = 'rotateY(0deg)';
@@ -3466,6 +3706,39 @@ alert("✨ Flashcard deck generated successfully!");
                 if (currentCardIndex >= activeReviewDeck.cards.length) {
                     document.getElementById('deckReviewView').classList.add('hidden');
                     document.getElementById('deckResultContainer').classList.remove('hidden');
+                     try {
+                       const _mode = window._sfFlashV092.mode;
+                       const _regenBtn = document.getElementById('deckRegenerateBtnV092');
+                       const _lockEl = document.getElementById('deckLockStatusV092');
+                       const _deckTitle = activeReviewDeck?.title || 'deck';
+                       const _lockKey = 'studyforge_deck_lock_' + _deckTitle;
+                       if (_mode === 'fixgaps') {
+                         if (_regenBtn) _regenBtn.classList.remove('hidden');
+                         if (_lockEl) { _lockEl.classList.remove('hidden'); _lockEl.textContent = "Fix Gaps: Tap Regenerate to make a new deck with your failed cards + new fillers."; }
+                       } else if (_mode === 'recall') {
+                         if (_regenBtn) _regenBtn.classList.add('hidden');
+                         const _step = window._sfFlashV092.recallStep || 0;
+                         const _intervals = window._sfFlashV092.recallIntervals || [10,15,20,25];
+                         const _waitMin = _intervals[Math.min(_step, _intervals.length-1)] + (_step >= _intervals.length ? (_step - _intervals.length + 1) * 5 : 0);
+                         window._sfFlashV092.recallStep = _step + 1;
+                         const _until = Date.now() + _waitMin * 60 * 1000;
+                         localStorage.setItem(_lockKey, String(_until));
+                         if (_lockEl) { _lockEl.classList.remove('hidden'); _lockEl.textContent = "Recall Memory: Deck locked for " + _waitMin + " mins. Come back after the timer. Wrong = back to 10 mins."; }
+                         try { if (typeof scheduleRecallNotificationV092==='function') scheduleRecallNotificationV092(_waitMin); } catch(e){}
+                       } else if (_mode === 'repetition') {
+                         if (_regenBtn) _regenBtn.classList.add('hidden');
+                         const _stepR = window._sfFlashV092.repetitionStep || 0;
+                         const _days = [1,3,7,14][Math.min(_stepR, 3)];
+                         window._sfFlashV092.repetitionStep = _stepR + 1;
+                         const _untilR = Date.now() + _days * 24 * 60 * 60 * 1000;
+                         localStorage.setItem(_lockKey, String(_untilR));
+                         if (_lockEl) { _lockEl.classList.remove('hidden'); _lockEl.textContent = "Repetition: Deck locked for " + _days + " day(s). SRS: 1d -> 3d -> 7d -> 14d. Come back when due."; }
+                       } else {
+                         if (_regenBtn) _regenBtn.classList.add('hidden');
+                         if (_lockEl) _lockEl.classList.add('hidden');
+                       }
+                     } catch(e){}
+
                     document.getElementById('deckScorePercentText').textContent = `${Math.round((cardMasteredCount/activeReviewDeck.cards.length)*100)}%`;
                     const completionBonusXp = 30;
 const completionBonusCoins = 30;
@@ -3552,7 +3825,7 @@ updateStats();
                 
                 let promptText;
                 if (materialContext.trim().length > 0) {
-                    promptText = `Based on the following study materials, generate a JSON array. IMPORTANT (V0.79 Better Prompt): First reuse questions that appear in the materials file (Kisi-Kisi / Latihan Soal / Essay). If the user has already used all questions from the file (used questions list is provided), then generate NEW AI questions from the same materials with the same topics. Do NOT repeat used questions. Generate a JSON array of ${qty} multiple-choice questions. 
+                    promptText = `Based on the following study materials, generate a JSON array. IMPORTANT (V0.92 Better Prompt): First reuse questions that appear in the materials file (Kisi-Kisi / Latihan Soal / Essay). If the user has already used all questions from the file (used questions list is provided), then generate NEW AI questions from the same materials with the same topics. Do NOT repeat used questions. Generate a JSON array of ${qty} multiple-choice questions. 
 Keys required for each object:
 - "q": The main question string.
 - "options": An array of 4 multiple choice options.
@@ -3680,7 +3953,7 @@ ${materialContext}`;
                 userProfile.quizzesCompleted++;
 
                 if (!userProfile.quizHistoryRecords) userProfile.quizHistoryRecords = [];
-                // V0.79 FIX: store material CONTENT for analytics, NEVER filename
+                // V0.92 FIX: store material CONTENT for analytics, NEVER filename
                 let _matContent = "";
                 try{ _matContent = (typeof materials!=='undefined' ? materials.map(m=>m.content||"").join("\n\n") : "") || ""; }catch(e){}
                 userProfile.quizHistoryRecords.push({
@@ -3870,6 +4143,9 @@ ${materialContext}`;
             const isImage = file.type.startsWith('image/') || /\.(png|jpe?g|gif|webp|bmp)$/i.test(fileName);
             const isDocx = fileName.endsWith('.docx');
             const isPdf = fileName.endsWith('.pdf');
+                 const isAudioVideo = (typeof isAudioVideoFileV092 === 'function' ? isAudioVideoFileV092(file) : false);
+                 const isPptx = fileName.endsWith('.pptx');
+                 const isXlsx = fileName.endsWith('.xlsx') || fileName.endsWith('.xls');
 
             if (status) {
                 status.classList.remove('hidden');
@@ -3894,6 +4170,17 @@ ${materialContext}`;
                 } else if (isPdf) {
                     if (status) status.textContent = "Extracting PDF " + file.name + "...";
                     extracted = await extractTextFromPDF(file);
+                } else if (isPptx) {
+                    if (status) status.textContent = "Extracting PPTX " + file.name + "...";
+                    extracted = await extractTextFromPPTX(file);
+                } else if (isXlsx) {
+                    if (status) status.textContent = "Extracting XLSX " + file.name + "...";
+                    extracted = await extractTextFromXLSX(file);
+                } else if (isAudioVideo) {
+                    if (!apiKey) { alert("Audio/Video transcription requires a Gemini API Key. Please set it in Settings first."); openSettingsModal(); if (status) status.textContent = "Upload cancelled — API key required for audio/video."; event.target.value = ""; return; }
+                    if (file.size > 20 * 1024 * 1024) { alert("Audio/Video file too large for Gemini inline transcription (max ~20 MB). Please trim / split to under 20 MB."); if (status) status.textContent = "File too large for Gemini transcription (max 20 MB)."; event.target.value = ""; return; }
+                    if (status) status.textContent = "Transcribing " + file.name + " with Gemini...";
+                    extracted = await extractTextFromAudioVideo(file);
                 } else {
                     extracted = await file.text();
                 }
@@ -4378,6 +4665,9 @@ ${content.slice(0, 12000)}`;
             const isImage = file.type.startsWith('image/') || /\.(png|jpe?g|gif|webp|bmp|tiff?)$/i.test(fileName);
             const isDocx = fileName.endsWith('.docx');
             const isPdf = fileName.endsWith('.pdf');
+                 const isAudioVideo = (typeof isAudioVideoFileV092 === 'function' ? isAudioVideoFileV092(file) : false);
+                 const isPptx = fileName.endsWith('.pptx');
+                 const isXlsx = fileName.endsWith('.xlsx') || fileName.endsWith('.xls');
 
             if (status) {
                 status.classList.remove('hidden');
@@ -4405,6 +4695,17 @@ ${content.slice(0, 12000)}`;
                 } else if (isPdf) {
                     if (status) status.textContent = "Extracting PDF " + file.name + "...";
                     extracted = await extractTextFromPDF(file);
+                } else if (isPptx) {
+                    if (status) status.textContent = "Extracting PPTX " + file.name + "...";
+                    extracted = await extractTextFromPPTX(file);
+                } else if (isXlsx) {
+                    if (status) status.textContent = "Extracting XLSX " + file.name + "...";
+                    extracted = await extractTextFromXLSX(file);
+                } else if (isAudioVideo) {
+                    if (!apiKey) { alert("Audio/Video transcription requires a Gemini API Key. Please set it in Settings first."); openSettingsModal(); if (status) status.textContent = "Upload cancelled — API key required for audio/video."; event.target.value = ""; return; }
+                    if (file.size > 20 * 1024 * 1024) { alert("Audio/Video file too large for Gemini inline transcription (max ~20 MB). Please trim / split to under 20 MB."); if (status) status.textContent = "File too large for Gemini transcription (max 20 MB)."; event.target.value = ""; return; }
+                    if (status) status.textContent = "Transcribing " + file.name + " with Gemini...";
+                    extracted = await extractTextFromAudioVideo(file);
                 } else {
                     extracted = await file.text();
                 }
@@ -4649,17 +4950,19 @@ ${content}`;
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-app.js";
   import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-auth.js";
+  import { getDatabase, ref, get, set, onValue } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-database.js";
   const firebaseConfig = {
     apiKey: "AIzaSyCzZEtP0VPAT1yLDoyx3Zawj4xqtj692JQ",
     authDomain: "studyforge-d79bc.firebaseapp.com",
     projectId: "studyforge-d79bc",
+    databaseURL: "https://studyforge-d79bc-default-rtdb.asia-southeast1.firebasedatabase.app",
     storageBucket: "studyforge-d79bc.firebasestorage.app",
     messagingSenderId: "363581171749",
     appId: "1:363581171749:web:cb18409dbb4645fb4a77cc",
     measurementId: "G-3SYMVVPKMP"
   };
   let app=null, auth=null;
-  try{ app=initializeApp(firebaseConfig); auth=getAuth(app); window._sfAuth=auth; window._sfGoogleProvider=new GoogleAuthProvider(); }catch(e){ console.warn("Firebase init failed", e); }
+  try{ app=initializeApp(firebaseConfig); auth=getAuth(app); window._sfAuth=auth; window._sfGoogleProvider=new GoogleAuthProvider(); try{ window._sfDB=getDatabase(app); }catch(e){ console.warn('RTDB init failed', e); } }catch(e){ console.warn("Firebase init failed", e); }
   window.signInWithGoogle = async function(){
     try{
       if(!auth){ alert("Firebase not ready. Enable Google provider in Firebase Console > Authentication > Sign-in method > Google."); return; }
@@ -4693,7 +4996,9 @@ ${content}`;
       // Gmail matched -> transfer data
       if(data.coins!=null) { try{ if(window.userProfile) window.userProfile.coins=data.coins; }catch(_){} }
       if(data.materials && Array.isArray(data.materials)){ try{ if(window.materials) { data.materials.forEach(m=>{ if(!window.materials.find(x=>x.name===m.name)) window.materials.push(m); }); } }catch(_){} }
-      localStorage.setItem('studyforge_transfer_gmail', fileGmail);
+      
+       // Also restore API key from transfer file (it is in settings / apiKey)
+       try{ const tfKey = (data.settings && data.settings.apiKey) || data.apiKey || ''; if(tfKey){ apiKey = tfKey; try{ if(typeof db !== 'undefined' && typeof currentUser !== 'undefined' && currentUser) await db.settings.put({ username: currentUser, apiKey: tfKey }); }catch(e){} const tfInp = document.getElementById('settingsApiKey'); if(tfInp) tfInp.value = tfKey; } }catch(e){}localStorage.setItem('studyforge_transfer_gmail', fileGmail);
       localStorage.setItem('studyforge_google_linked', fileGmail);
       document.getElementById('transferStatus').textContent="Transfer complete for "+fileGmail+".";
       if(typeof window.saveAccountData==='function') try{ window.saveAccountData(); }catch(_){}
@@ -4701,36 +5006,18 @@ ${content}`;
   };
 </script>
 <script>
-/* ===== V0.79: YouTube, PPTX, Health Reminder, Tips, Pre-Gen, Quests ===== */
+/* ===== V0.92: YouTube, PPTX, Health Reminder, Tips, Pre-Gen, Quests ===== */
 window._sfUsedQuestions = JSON.parse(localStorage.getItem('studyforge_used_questions')||'[]');
 window._sfStudySeconds = parseInt(localStorage.getItem('studyforge_study_seconds')||'0',10)||0;
 window._sfStudyLockedUntil = parseInt(localStorage.getItem('studyforge_lock_until')||'0',10)||0;
 window._sfLastActivityPage = 'overview';
 function isYouTubeUrl(u){ return /^(https?:\/\/)?(www\.)?(youtube\.com\/(watch|shorts|embed|live)|youtu\.be\/)/i.test((u||'').trim()); }
-async function handleYouTubeLink(){
-  const inp=document.getElementById('ytLinkInput'); const st=document.getElementById('ytLinkStatus'); const resBox=document.getElementById('ytResult');
-  const url=(inp?.value||'').trim();
-  if(!isYouTubeUrl(url)){ if(st) st.textContent="Not a YouTube link. Paste a youtube.com or youtu.be link."; return; }
-  if(st) st.textContent="Sending to Gemini...";
-  try{
-    const prompt="You are StudyForge. The user pasted this YouTube link: "+url+". Transcript MUST be in the video's ORIGINAL language. First detect the language spoken in the video, then transcribe verbatim in THAT same language. Do NOT translate. Do NOT convert Indonesian to English, English to Indonesian, or any language to another. If video is Indonesian, output Indonesian. If English, output English. If Japanese, output Japanese, etc. The user sent this link because they understand the video's language, so keep it in that language. Then give summary, key points, and 3 example questions - ALL in the SAME video language (no translation). If you cannot access the video, say so and ask user to upload audio.";
-    // Use existing callGeminiApi if available, with fileData hint in prompt (Gemini API YouTube URL support)
-    let out="";
-    if(typeof callGeminiApi==='function'){
-      // Try fileData style via global if supported, else text prompt
-      try{ const r=await callGeminiApi(prompt); out=r?.text||JSON.stringify(r); }catch(e){ out="Gemini error: "+e.message; }
-    } else { out="Gemini not ready."; }
-    if(resBox){ resBox.classList.remove('hidden'); resBox.textContent=out; }
-    if(st) st.textContent="Done. Saved as material below.";
-    // Save as material
-    try{
-      if(typeof materials!=='undefined'){
-        materials.push({name:"YouTube: "+url, content:out, type:"youtube"});
-        if(typeof renderMaterialList==='function') renderMaterialList();
-        if(typeof saveMaterials==='function') saveMaterials();
-      }
-    }catch(e){}
-  }catch(e){ if(st) st.textContent="Failed: "+e.message; }
+async function handleYouTubeLink(){ const st=document.getElementById('ytLinkStatus'); if(st) st.textContent='Use TranscriptMagic: Open https://transcriptmagic.com/youtube/ , Paste YouTube link, Transcribe, Copy transcript and paste it to the text box.'; }
+function handleYouTubeLinkOLD(){
+  alert('No direct YouTube link. Use TranscriptMagic: Open https://transcriptmagic.com/youtube/ , Paste YouTube link, Click Transcribe, Copy transcript and paste it here.');
+  const st = document.getElementById('ytLinkStatus');
+  if(st) st.textContent = 'No direct YouTube link. Use TranscriptMagic: Open https://transcriptmagic.com/youtube/ , Paste YouTube link, Click Transcribe, Copy transcript and paste it to the text box.';
+  return;
 }
 async function extractTextFromPPTX(file){
   if(typeof JSZip==='undefined') throw new Error("JSZip not loaded");
@@ -4746,6 +5033,23 @@ async function extractTextFromPPTX(file){
   if(!joined) throw new Error("No text found in PPTX");
   return joined;
 }
+async function extractTextFromXLSX(file){
+  if(typeof XLSX==='undefined') throw new Error("SheetJS (XLSX) not loaded");
+  const buf=await file.arrayBuffer();
+  const wb=XLSX.read(buf, {type:'array'});
+  let texts=[];
+  (wb.SheetNames||[]).forEach(function(name){
+    try{
+      const ws=wb.Sheets[name];
+      const csv=XLSX.utils.sheet_to_csv(ws, {FS:' | ', RS:'\n'});
+      if(csv && csv.trim()) texts.push('Sheet: '+name+'\n'+csv.trim());
+    }catch(e){}
+  });
+  const joined=texts.join("\n\n").trim();
+  if(!joined) throw new Error("No text found in XLSX");
+  return joined;
+}
+
 // Patch extractTextFromFile if exists to handle pptx - wrap
 (function(){
   const orig = window.extractTextFromFile;
@@ -4816,10 +5120,10 @@ document.addEventListener('DOMContentLoaded', ()=>{
 
 <script>
 
-window._sfQuestV079 = JSON.parse(localStorage.getItem('studyforge_quests_v079')||'{}');
-window._sfQuestDisplayV079 = JSON.parse(localStorage.getItem('studyforge_quest_display_v079')||'null');
-function saveQuestV079(){ localStorage.setItem('studyforge_quests_v079', JSON.stringify(window._sfQuestV079)); }
-function saveQuestDisplayV079(){ localStorage.setItem('studyforge_quest_display_v079', JSON.stringify(window._sfQuestDisplayV079)); }
+window._sfQuestV079 = JSON.parse(localStorage.getItem('studyforge_quests_v092')||'{}');
+window._sfQuestDisplayV079 = JSON.parse(localStorage.getItem('studyforge_quest_display_v092')||'null');
+function saveQuestV079(){ localStorage.setItem('studyforge_quests_v092', JSON.stringify(window._sfQuestV079)); }
+function saveQuestDisplayV079(){ localStorage.setItem('studyforge_quest_display_v092', JSON.stringify(window._sfQuestDisplayV079)); }
 const QUEST_POOL_V079 = [
   {id:'win3', title:'Win 3 Games', coins:40, exp:40, type:'quest', label:'Quest • Easy'},
   {id:'gtwEasy', title:'Win Guess The Word — Easy Mode 3 Times', coins:30, exp:30, type:'quest', label:'Quest • Easy'},
@@ -4946,45 +5250,846 @@ setTimeout(updateQuestV079UI, 800);
 </script>
 <script>document.getElementById("aiTipModal")?.addEventListener("click", e=>{ const t=document.getElementById("aiTipTextContent"); if(t) t.classList.add("revealed"); });</script>
 <script>
-async function handleYouTubeLinkGeneric(url){
-  if(!isYouTubeUrl(url)) return null;
-  const prompt="You are StudyForge. The user pasted this YouTube link: "+url+". Transcript MUST be in the video's ORIGINAL language. First detect the language spoken in the video, then transcribe verbatim in THAT same language. Do NOT translate. Do NOT convert Indonesian to English, English to Indonesian, or any language to another. If video is Indonesian, output Indonesian. If English, output English. If Japanese, output Japanese, etc. The user sent this link because they understand the video's language, so keep it in that language. Then give summary, key points, and examples - ALL in the SAME video language (no translation). If you cannot access the video, say so.";
-  if(typeof callGeminiApi==='function'){
-    const r=await callGeminiApi(prompt);
-    return r?.text||JSON.stringify(r);
-  }
-  return "Gemini not ready.";
+async function handleYouTubeLinkGeneric(){
+  const st = document.getElementById('ytLinkStatusMindMap') || document.getElementById('ytLinkStatusNoteMaker') || document.getElementById('ytLinkStatus');
+  if(st) st.textContent = 'No direct YouTube link. Use TranscriptMagic: Open https://transcriptmagic.com/youtube/ , Paste YouTube link, Click Transcribe, Copy transcript and paste it to the text box.';
+  alert('No direct YouTube link. Use TranscriptMagic: Open https://transcriptmagic.com/youtube/ , Paste YouTube link, Click Transcribe, Copy transcript and paste it here.');
+  return null;
 }
 async function handleYouTubeLinkNoteMaker(){
-  const inp=document.getElementById('ytLinkInputNoteMaker'); const st=document.getElementById('ytLinkStatusNoteMaker'); const box=document.getElementById('ytResultNoteMaker');
-  const url=(inp?.value||'').trim();
-  if(!isYouTubeUrl(url)){ if(st) st.textContent="Not a YouTube link. Paste a youtube.com or youtu.be link."; return; }
-  if(st) st.textContent="Sending to Gemini...";
-  try{
-    const out=await handleYouTubeLinkGeneric(url);
-    if(box){ box.classList.remove('hidden'); box.textContent=out; }
-    if(st) st.textContent="Done. Notes from YouTube below.";
-    // Also push to noteMakerOutput if exists, so it becomes a real note
-    const outEl=document.getElementById('noteMakerOutput'); if(outEl){ outEl.textContent=out; document.getElementById('noteMakerOutputWrapper')?.classList.remove('hidden'); }
-    try{ if(typeof materials!=='undefined'){ materials.push({name:"YouTube (Note Maker): "+url, content:out, type:"youtube"}); if(typeof renderMaterialList==='function') renderMaterialList(); } }catch(e){}
-  }catch(e){ if(st) st.textContent="Failed: "+e.message; }
+  const st = document.getElementById('ytLinkStatusMindMap') || document.getElementById('ytLinkStatusNoteMaker') || document.getElementById('ytLinkStatus');
+  if(st) st.textContent = 'No direct YouTube link. Use TranscriptMagic: Open https://transcriptmagic.com/youtube/ , Paste YouTube link, Click Transcribe, Copy transcript and paste it to the text box.';
+  alert('No direct YouTube link. Use TranscriptMagic: Open https://transcriptmagic.com/youtube/ , Paste YouTube link, Click Transcribe, Copy transcript and paste it here.');
+  return null;
 }
 async function handleYouTubeLinkMindMap(){
-  const inp=document.getElementById('ytLinkInputMindMap'); const st=document.getElementById('ytLinkStatusMindMap'); const box=document.getElementById('ytResultMindMap');
-  const url=(inp?.value||'').trim();
-  if(!isYouTubeUrl(url)){ if(st) st.textContent="Not a YouTube link. Paste a youtube.com or youtu.be link."; return; }
-  if(st) st.textContent="Sending to Gemini...";
-  try{
-    const out=await handleYouTubeLinkGeneric(url);
-    if(box){ box.classList.remove('hidden'); box.textContent=out; }
-    if(st) st.textContent="Done. Generating mind map from YouTube...";
-    // Set topic to transcript so generateMindMap uses it
-    const topicEl=document.getElementById('mindMapTopic'); if(topicEl) topicEl.value="YouTube: "+url+"\n"+out.slice(0,2000);
-    try{ if(typeof materials!=='undefined'){ materials.push({name:"YouTube (Mind Map): "+url, content:out, type:"youtube"}); if(typeof renderMaterialList==='function') renderMaterialList(); } }catch(e){}
-    // Auto-generate mind map if function exists
-    if(typeof generateMindMap==='function'){ generateMindMap(); }
-  }catch(e){ if(st) st.textContent="Failed: "+e.message; }
+  const st = document.getElementById('ytLinkStatusMindMap') || document.getElementById('ytLinkStatusNoteMaker') || document.getElementById('ytLinkStatus');
+  if(st) st.textContent = 'No direct YouTube link. Use TranscriptMagic: Open https://transcriptmagic.com/youtube/ , Paste YouTube link, Click Transcribe, Copy transcript and paste it to the text box.';
+  alert('No direct YouTube link. Use TranscriptMagic: Open https://transcriptmagic.com/youtube/ , Paste YouTube link, Click Transcribe, Copy transcript and paste it here.');
+  return null;
 }
 </script>
+
+<script>
+// ===== V. 0.92 Flashcards: Recall / Fix Gaps / Repetition / Regenerate =====
+window._sfFlashV092 = { mode: null, recallStep: 0, recallIntervals: [10,15,20,25], wrongList: [] };
+function getFlashWantedCount(){ const el=document.getElementById('deckModeCardsV092') || document.getElementById('flashWantedCountV092'); return parseInt(el?.value||'10',10)||10; }
+function startFlashModeV092(mode){
+  window._sfFlashV092.mode=mode; try { const _rb2 = document.getElementById('deckRegenerateBtnV092'); if (_rb2) _rb2.classList.add('hidden'); window._sfFlashV092.failedList = []; } catch(e){}
+  const st=document.getElementById('flashModeStatusV092'); if(st) st.textContent="Mode: "+mode;
+  if(mode==='recall'){ startRecallMemoryV092(); }
+  if(mode==='fixgaps'){ startFixGapsV092(); }
+  if(mode==='repetition'){ startRepetitionV092(); }
+  if(mode==='no'){ if(st) st.textContent="Mode: No / Free - showing deck as-is."; }
+}
+function startRecallMemoryV092(){
+  const st=document.getElementById('flashModeStatusV092');
+  window._sfFlashV092.recallStep=0;
+  if(st) st.textContent="Recall Memory: Play once, then it will ask 'Repeat again?' - Yes = same game, Regenerate = new questions.";
+  // Start existing game if available
+  try{ if(typeof startFlashcardsGame==='function') startFlashcardsGame(); }catch(e){}
+}
+function startFixGapsV092(){
+  const wanted=getFlashWantedCount();
+  const st=document.getElementById('flashModeStatusV092');
+  // Get wrong list from last quiz/flash history
+  let wrong=[];
+  try{
+    const recs=userProfile?.quizHistoryRecords||[];
+    const last=recs[recs.length-1];
+    if(last?.wrongQuestions) wrong=last.wrongQuestions;
+    // Also from flash history if exists
+    if(window._sfFlashV092.wrongList.length) wrong=window._sfFlashV092.wrongList;
+  }catch(e){}
+  if(!wrong.length){
+    if(st) st.textContent="Fix Gaps: No wrong questions found. Do a quiz first, then Fix Gaps will use those wrong ones.";
+    return;
+  }
+  window._sfFlashV092.wrongList=wrong;
+  const need=Math.max(0, wanted - wrong.length);
+  if(st) st.textContent="Fix Gaps: "+wrong.length+" wrong + fill "+need+" to reach "+wanted+". Sending wrong list to Gemini, file first then AI.";
+  // Build prompt to Gemini: send wrong list + fill rest
+  (async()=>{
+    try{
+      const wrongText=wrong.map((w,i)=> (i+1)+". Q: "+(w.q||w.question||w)+ " | Your answer: "+(w.yourAnswer||'')+" | Correct: "+(w.correctAnswer||w.correct||'')).join("\n");
+      const weakTopics=[...new Set(wrong.map(w=>w.topic||""))].filter(Boolean).join(", ");
+      const prompt="Fix Gaps request. Here are questions user got wrong:\n"+wrongText+"\nWeak topics: "+weakTopics+"\nKeep those wrong ones as-is. Generate "+need+" MORE to fill to "+wanted+" total. New ones must be ONLY on same weak topics. First reuse unused questions from file on those topics. If none left, generate NEW AI questions on same topics. No repeats. Same language as file/video (transcript in video original language, do NOT translate). Return JSON array of flashcards.";
+      let out="";
+      if(typeof callGeminiApi==='function'){ const r=await callGeminiApi(prompt); out=r?.text||JSON.stringify(r); }
+      const box=document.getElementById('flashModeStatusV092'); if(box) box.textContent="Fix Gaps ready: "+wrong.length+" wrong + "+need+" new fillers. Check deck / output.";
+      // Save to materials for reuse
+      try{ if(typeof materials!=='undefined') materials.push({name:"Fix Gaps Deck", content:out, type:"fixgaps"}); }catch(e){}
+    }catch(e){ if(st) st.textContent="Fix Gaps failed: "+e.message; }
+  })();
+}
+function startRepetitionV092(){
+  const st=document.getElementById('flashModeStatusV092');
+  const dueInfo=document.getElementById('flashDueInfoV092');
+  // Per-card SRS data stored in localStorage
+  let srs=JSON.parse(localStorage.getItem('studyforge_srs_v092')||'{}');
+  const now=Date.now();
+  // Build due list from decks: if no SRS yet, all due
+  let dueCount=0, total=0;
+  try{
+    const allDecks=typeof decks!=='undefined'?decks:[];
+    allDecks.forEach(d=>{ (d.cards||[]).forEach((c,i)=>{ total++; const key=d.title+"_"+i; const rec=srs[key]; if(!rec || now>=rec.dueDate) dueCount++; }); });
+  }catch(e){}
+  if(dueInfo) dueInfo.textContent="Repetition: "+dueCount+" cards due today out of "+total+" total. Wrong = sooner, Right = later (1d → 3d → 7d → 14d).";
+  if(st) st.textContent="Repetition: Showing only due cards. Answer Again/Hard/Good/Easy to update interval.";
+}
+function updateSRSV092(cardKey, rating){
+  let srs=JSON.parse(localStorage.getItem('studyforge_srs_v092')||'{}');
+  let rec=srs[cardKey]||{interval:1, ease:2.5, dueDate:Date.now()};
+  if(rating==='again'){ rec.interval=0.01; rec.ease=Math.max(1.3, rec.ease-0.2); }
+  else if(rating==='hard'){ rec.interval=Math.max(1, rec.interval*1.2); rec.ease=Math.max(1.3, rec.ease-0.15); }
+  else if(rating==='good'){ rec.interval=rec.interval===1?3:Math.round(rec.interval*rec.ease); }
+  else if(rating==='easy'){ rec.interval=Math.round(rec.interval*rec.ease*1.3); rec.ease+=0.15; }
+  rec.dueDate=Date.now()+rec.interval*24*60*60*1000;
+  rec.lastReviewed=Date.now();
+  srs[cardKey]=rec; localStorage.setItem('studyforge_srs_v092', JSON.stringify(srs));
+  return rec;
+}
+async function regenerateDeckV092(){
+  const st = document.getElementById('flashModeStatusV092');
+  const btn = document.getElementById('deckRegenerateBtnV092');
+  if (window._sfFlashV092.mode !== 'fixgaps') {
+    if (st) st.textContent = "Regenerate Deck only shows after finishing a Fix Gaps deck.";
+    alert("Regenerate Deck only works for Fix Gaps. Choose Fix Gaps, finish the deck, then Regenerate.");
+    return;
+  }
+  const wanted = getFlashWantedCount();
+  const failed = (window._sfFlashV092.failedList || []).map(function(c){
+    return { q: c.q || c.question || c, a: c.a || c.answer || '', readingText: c.readingText || '' };
+  });
+  const seen = new Set(); const failedUnique = [];
+  failed.forEach(function(c){ const k = String(c.q||'').toLowerCase().trim(); if (k && !seen.has(k)) { seen.add(k); failedUnique.push(c); } });
+  if (!failedUnique.length) {
+    if (st) st.textContent = "Fix Gaps Regenerate: No failed cards. You mastered all - no new deck needed.";
+    alert("No failed cards - you mastered them all! No new deck needed.");
+    return;
+  }
+  if (btn) { btn.disabled = true; btn.textContent = "Regenerating..."; }
+  if (st) st.textContent = "Fix Gaps Regenerate: " + failedUnique.length + " failed + filling to " + wanted + " (file first, then AI)...";
+  try {
+    const need = Math.max(0, wanted - failedUnique.length);
+    let fileQs = [];
+    const used = new Set(failedUnique.map(function(c){ return String(c.q||'').toLowerCase().trim(); }));
+    try { (typeof decks!=='undefined'?decks:[]).forEach(function(d){ (d.cards||[]).forEach(function(c){ used.add(String(c.q||c.question||'').toLowerCase().trim()); }); }); } catch(e){}
+    if (typeof materials!=='undefined') {
+      materials.forEach(function(m){
+        const lines = (m.content||'').split(/\n|\?/).filter(function(l){ return l.trim().length > 10; });
+        lines.forEach(function(l){
+          const q = l.trim(); const k = q.toLowerCase();
+          if (q && !used.has(k) && !fileQs.includes(q)) fileQs.push(q);
+        });
+      });
+    }
+    const fromFile = fileQs.slice(0, need).map(function(q){ return { q: q, a: '(from file)', readingText: '' }; });
+    const needAI = Math.max(0, need - fromFile.length);
+    let aiQs = [];
+    if (needAI > 0) {
+      try {
+        const failedText = failedUnique.map(function(c,i){ return (i+1)+". Q: "+c.q; }).join("\n");
+        const r = await callGeminiApi("Fix Gaps Regenerate. User failed these:\n"+failedText+"\nGenerate "+needAI+" NEW flashcard questions on SAME topics as failed ones, SAME language, do NOT translate, do NOT repeat failed or file ones. Return ONLY JSON array [{\"q\":\"...\",\"a\":\"...\"}].");
+        const txt = r?.text||''; const mm = txt.match(/\[.*\]/s); if (mm) aiQs = JSON.parse(mm[0]);
+      } catch(e){}
+    }
+    const allCards = failedUnique.concat(fromFile).concat(aiQs.map(function(q){ return { q: q.q||q.question||'', a: q.a||q.answer||'', readingText: q.readingText||'' }; })).slice(0, Math.max(wanted, failedUnique.length));
+    const baseTitle = (typeof activeReviewDeck!=='undefined' && activeReviewDeck?.title) || 'Deck';
+    const newTitle = "Fix Gaps - " + baseTitle + " (Regenerated)";
+    const newDeck = { title: newTitle, desc: "Failed cards + new fillers. Failed: "+failedUnique.length+", New: "+(allCards.length - failedUnique.length), cards: allCards };
+    if (typeof decks!=='undefined') decks.push(newDeck);
+    try { if (typeof saveAccountData==='function') await saveAccountData(); } catch(e){}
+    try { if (typeof renderDecks==='function') renderDecks(); } catch(e){}
+    window._sfFlashV092.failedList = [];
+    if (st) st.textContent = "Regenerate done: New deck '"+newTitle+"' - "+failedUnique.length+" failed + "+(allCards.length - failedUnique.length)+" new = "+allCards.length+" cards. Tap it to start.";
+    alert("New deck created: "+newTitle+"\n"+failedUnique.length+" failed + "+(allCards.length - failedUnique.length)+" new = "+allCards.length+" cards.\nTap it in Decks to start.");
+    if (btn) { btn.classList.add('hidden'); }
+  } catch(e) {
+    if (st) st.textContent = "Regenerate failed: "+e.message;
+    alert("Regenerate failed: "+e.message);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = "Regenerate Deck - Failed + New Cards"; }
+  }
+}
+// Recall Memory: End-game repeat prompt + Regenerate > Wait > Notification > Start
+function askRepeatAgainV092(){
+  const want=confirm("Recall Memory: Do you want to repeat this again?");
+  if(want){
+    // Same game, same questions
+    const step=window._sfFlashV092.recallStep||0;
+    const intervals=window._sfFlashV092.recallIntervals;
+    const waitMin=intervals[Math.min(step, intervals.length-1)] + (step>=intervals.length ? (step-intervals.length+1)*5 : 0);
+    window._sfFlashV092.recallStep=step+1;
+    scheduleRecallNotificationV092(waitMin);
+    const st=document.getElementById('flashModeStatusV092'); if(st) st.textContent="Recall Memory: Wait "+waitMin+" mins, then notification will pop. You can leave the app.";
+  } else {
+    const st=document.getElementById('flashModeStatusV092'); if(st) st.textContent="Recall Memory: Done. Say No to stop.";
+  }
+}
+function scheduleRecallNotificationV092(waitMin){
+  // Request permission if needed
+  if('Notification' in window && Notification.permission==='default'){ try{ Notification.requestPermission(); }catch(e){} }
+  // Show in-app timer + schedule browser notification
+  setTimeout(()=>{
+    const msg="Recall Memory ready! Time to repeat - "+waitMin+" mins passed.";
+    try{
+      if('Notification' in window && Notification.permission==='granted'){ new Notification("StudyForge - Recall Memory", {body: msg}); }
+    }catch(e){}
+    // Also show in-app
+    const st=document.getElementById('flashModeStatusV092'); if(st) st.textContent=msg+" Tap Start to begin next round.";
+    if(confirm(msg+" Start now?")){ try{ if(typeof startFlashcardsGame==='function') startFlashcardsGame(); }catch(e){} }
+  }, waitMin*60*1000);
+  // Also store for GitHub Pages notification fallback
+  localStorage.setItem('studyforge_recall_next_v092', String(Date.now()+waitMin*60*1000));
+}
+// Hook: when flash game ends, ask repeat if mode is recall
+(function(){
+  // If game has end function, we expose askRepeatAgain for manual use via button
+  window.askRepeatAgainV092=askRepeatAgainV092;
+})();
+</script>
+
+<script>
+// ===== V.0.92 FIX ALL (re-applied after revert) =====
+function getFlashWantedCount(){ const el=document.getElementById('deckModeCardsV092') || document.getElementById('flashWantedCountV092'); return Math.min(50, Math.max(1, parseInt(el?.value||'10',10)||10)); }
+function stableStringifyV092(o){ if(o===null||typeof o!=='object') return JSON.stringify(o); if(Array.isArray(o)) return '['+o.map(v=>stableStringifyV092(v)).join(',')+']'; const k=Object.keys(o).sort(); return '{'+k.map(x=>JSON.stringify(x)+':'+stableStringifyV092(o[x])).join(',')+'}'; }
+async function computeChecksumV092(d){ try{ const s=stableStringifyV092(d); if(window.crypto&&window.crypto.subtle){ const e=new TextEncoder().encode(s); const b=await window.crypto.subtle.digest('SHA-256',e); return Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,'0')).join(''); } return 'fallback-'+s.length; }catch(e){ return 'error-'+Date.now(); } }
+function showTamperWarningV092(detail){ const m=document.getElementById('tamperWarningModal'); const d=document.getElementById('tamperWarningDetail'); if(d) d.textContent=detail||''; if(m) m.classList.remove('hidden'); alert("Warning! You've been detected editing the account's data, your account won't be able to be retrieved."); }
+async function verifyExportDataV092(d){ if(!d||typeof d!=='object') return false; if(!d.checksum) return true; const {checksum,...rest}=d; return (await computeChecksumV092(rest))===checksum; }
+function buildChecksumPayloadV092(d){ const {checksum,...rest}=d; return rest; }
+function saveProfileExtraV092(){ const g=document.getElementById('profileGender')?.value||''; const b=document.getElementById('profileBirthday')?.value||''; const st=document.getElementById('profileBirthdayStatus'); const oldB=localStorage.getItem('studyforge_birthday')||''; const last=parseInt(localStorage.getItem('studyforge_birthday_last_change')||'0',10)||0; const now=Date.now(); const ONE=365*24*60*60*1000; if(b&&oldB&&b!==oldB&&last&&(now-last)<ONE){ const left=Math.ceil((ONE-(now-last))/(24*60*60*1000)); if(st) st.textContent="Birthday can only be changed once per year. You can change it again in "+left+" days."; const be=document.getElementById('profileBirthday'); if(be) be.value=oldB; return; } if(b&&b!==oldB) localStorage.setItem('studyforge_birthday_last_change', String(now)); if(b) localStorage.setItem('studyforge_birthday',b); localStorage.setItem('studyforge_gender',g); if(typeof userProfile!=='undefined'){ userProfile.gender=g; userProfile.birthday=b; if(typeof saveAccountData==='function') saveAccountData(); } try{ const cur=userProfile?.streak||0; const longest=Math.max(parseInt(localStorage.getItem('studyforge_longest_streak')||'0',10)||0,cur); localStorage.setItem('studyforge_longest_streak',String(longest)); const le=document.getElementById('profileLongestStreak'); if(le) le.textContent=longest+" days"; }catch(e){} if(st) st.textContent="Saved. Birthday celebrated with day + month even without year."; if(typeof renderLeaderboardV092==='function') renderLeaderboardV092(); }
+function getGradeLevelV092(){ try{ var auto=parseInt(localStorage.getItem('studyforge_grade_auto')||'',10); if(auto>=1 && auto<=12) return auto; var legacy=parseInt(localStorage.getItem('studyforge_grade')||'1',10); if(legacy>=1 && legacy<=12) return legacy; return 1; }catch(e){ return 1; } } // APP DETERMINES GRADE - user cannot update it manually
+function getAvgScoreV092(){ try{ const r=userProfile?.quizHistoryRecords||[]; if(!r.length) return 0; return r.reduce((a,x)=>a+(x.scorePercent||0),0)/r.length; }catch(e){ return 0; } }
+function sortLeaderboardV092(l){ return l.sort((a,b)=>{ if(a.grade!==b.grade){ const d=a.avg-b.avg; if(a.grade<b.grade&&d>70) return -1; if(b.grade<a.grade&&(b.avg-a.avg)>70) return 1; return b.grade-a.grade; } if(Math.abs(a.avg-b.avg)>0.001) return b.avg-a.avg; return (a.firstLearned||0)-(b.firstLearned||0); }); }
+function sendFriendRequestV092(){ const inp=document.getElementById('friendSearchInput'); const st=document.getElementById('friendStatus'); const name=(inp?.value||'').trim(); if(!name){ if(st) st.textContent="Type a username to search."; return; } let friends=JSON.parse(localStorage.getItem('studyforge_friends_v092')||'[]'); if(friends.find(f=>f.username.toLowerCase()===name.toLowerCase())){ if(st) st.textContent="Already friends with "+name; return; } let reqs=JSON.parse(localStorage.getItem('studyforge_friend_requests_v092')||'[]'); reqs.push({username:name, at:Date.now(), status:'pending'}); localStorage.setItem('studyforge_friend_requests_v092', JSON.stringify(reqs)); if(st) st.textContent="Request sent to "+name+" — waiting for accept."; if(inp) inp.value=''; renderLeaderboardV092(); }
+function renderFriendRequestsV092(){ const box=document.getElementById('friendRequestsList'); if(!box) return; let reqs=JSON.parse(localStorage.getItem('studyforge_friend_requests_v092')||'[]'); let incoming=JSON.parse(localStorage.getItem('studyforge_friend_incoming_v092')||'[]'); if(!reqs.length&&!incoming.length){ box.innerHTML='<p class="text-[11px] text-slate-400">No requests.</p>'; return; } let h=''; reqs.forEach((r,i)=>{ h+=`<div class="flex justify-between p-2 rounded-xl bg-slate-100 dark:bg-slate-800"><span class="text-xs">To ${r.username} • Pending...</span><button onclick="cancelFriendRequestV092(${i})" class="px-2 py-1 rounded-lg border text-[11px]">Cancel</button></div>`; }); incoming.forEach((r,i)=>{ h+=`<div class="flex justify-between p-2 rounded-xl bg-brand-500/10 border border-brand-500"><span class="text-xs font-bold">${r.username} wants to be friends</span><div class="flex gap-1"><button onclick="acceptFriendRequestV092(${i})" class="px-2 py-1 rounded-lg bg-brand-500 text-white text-[11px] font-bold">Accept</button><button onclick="declineFriendRequestV092(${i})" class="px-2 py-1 rounded-lg border text-[11px]">Decline</button></div></div>`; }); box.innerHTML=h; }
+function acceptFriendRequestV092(i){ let inc=JSON.parse(localStorage.getItem('studyforge_friend_incoming_v092')||'[]'); const r=inc[i]; if(!r) return; inc.splice(i,1); localStorage.setItem('studyforge_friend_incoming_v092', JSON.stringify(inc)); let fr=JSON.parse(localStorage.getItem('studyforge_friends_v092')||'[]'); fr.push({username:r.username, grade:1, avg:70, firstLearned:Date.now()}); localStorage.setItem('studyforge_friends_v092', JSON.stringify(fr)); renderLeaderboardV092(); }
+function declineFriendRequestV092(i){ let inc=JSON.parse(localStorage.getItem('studyforge_friend_incoming_v092')||'[]'); inc.splice(i,1); localStorage.setItem('studyforge_friend_incoming_v092', JSON.stringify(inc)); renderFriendRequestsV092(); }
+function cancelFriendRequestV092(i){ let reqs=JSON.parse(localStorage.getItem('studyforge_friend_requests_v092')||'[]'); reqs.splice(i,1); localStorage.setItem('studyforge_friend_requests_v092', JSON.stringify(reqs)); renderFriendRequestsV092(); }
+function addFriendV092(){ sendFriendRequestV092(); }
+function renderLeaderboardV092(){ const box=document.getElementById('leaderboardList'); if(!box) return; try{ var _w=getWinRateV092(); var _total=(_w&&( _w.played!=null?_w.played:_w.total))||0; var _fr=JSON.parse(localStorage.getItem('studyforge_friends_v092')||'[]'); var _has=(_fr.length>0)||(_total>0); if(!_has){ box.innerHTML='<p class="text-xs text-slate-400">nothing to see here...</p>'; return; } }catch(e){}  const myName=document.getElementById('profileUsernameDisplay')?.textContent||'You'; const me={username:myName, grade:getGradeLevelV092(), avg:getAvgScoreV092(), firstLearned:parseInt(localStorage.getItem('studyforge_first_learned')||String(Date.now()),10)}; if(!localStorage.getItem('studyforge_first_learned')) localStorage.setItem('studyforge_first_learned', String(me.firstLearned)); let friends=JSON.parse(localStorage.getItem('studyforge_friends_v092')||'[]'); const all=sortLeaderboardV092([me, ...friends]); box.innerHTML=all.map((u,i)=>`<div class="flex justify-between p-3 rounded-xl ${u.username===myName?'bg-brand-500/10 border border-brand-500':'bg-white dark:bg-slate-900 border'}"><span class="text-xs font-bold">#${i+1} ${u.username} ${u.username===myName?'(You)':''}</span><span class="text-[11px] text-slate-400">Grade ${u.grade} • Avg ${Math.round(u.avg)}%</span></div>`).join(''); const mr=document.getElementById('myLeaderboardRank'); if(mr) mr.textContent="#"+(all.findIndex(u=>u.username===myName)+1); const fl=document.getElementById('friendsListV092'); if(fl) fl.innerHTML=friends.length?friends.map(f=>`<div class="flex justify-between p-2 rounded-xl bg-white dark:bg-slate-900 border"><span class="text-xs">${f.username}</span><span class="text-[11px]">Grade ${f.grade} • ${Math.round(f.avg)}%</span></div>`).join(''):'<p class="text-[11px]">No friends yet.</p>'; renderFriendRequestsV092(); }
+window._sfFlashV092={mode:null, recallStep:0, recallIntervals:[10,15,20,25], wrongList:[]};
+function startFlashModeV092(mode){ window._sfFlashV092.mode=mode; const st=document.getElementById('flashModeStatusV092'); if(st) st.textContent="Mode: "+mode; if(mode==='recall') startRecallMemoryV092(); if(mode==='fixgaps') startFixGapsV092(); if(mode==='repetition') startRepetitionV092(); if(mode==='no'&&st) st.textContent="Mode: No / Free - showing deck as-is."; updateSRSButtonsVisibilityV092(); }
+function startRecallMemoryV092(){ const st=document.getElementById('flashModeStatusV092'); window._sfFlashV092.recallStep=0; if(st) st.textContent="Recall Memory: 10 → 15 → 20 → 25 mins, +5 each time. Wrong = back to 10. End game asks 'Repeat again?' - Yes = same game, Regenerate = new questions."; try{ if(typeof startFlashcardsGame==='function') startFlashcardsGame(); }catch(e){} }
+async function startFixGapsV092(){ const wanted=getFlashWantedCount(); const st=document.getElementById('flashModeStatusV092'); let wrong=[]; try{ const recs=userProfile?.quizHistoryRecords||[]; const last=recs[recs.length-1]; if(last?.wrongQuestions) wrong=last.wrongQuestions; }catch(e){} if(!wrong.length&&window._sfFlashV092.wrongList.length) wrong=window._sfFlashV092.wrongList; if(!wrong.length){ if(st) st.textContent="Fix Gaps: No wrong questions found. Do a quiz first."; return; } const need=Math.max(0, wanted-wrong.length); if(st) st.textContent=`Fix Gaps: ${wrong.length} wrong (same) + ${need} new = ${wanted}. File first, then AI, no repeats.`; try{ if(typeof startFlashcardsGame==='function') startFlashcardsGame(); }catch(e){} }
+function startRepetitionV092(){ const st=document.getElementById('flashModeStatusV092'); const due=document.getElementById('flashDueInfoV092'); let srs=JSON.parse(localStorage.getItem('studyforge_srs_v092')||'{}'); const now=Date.now(); let dueCount=0, total=0; try{ (typeof decks!=='undefined'?decks:[]).forEach(d=>{ (d.cards||[]).forEach((c,i)=>{ total++; const k=d.title+"_"+i; const rec=srs[k]; if(!rec||now>=rec.dueDate) dueCount++; }); }); }catch(e){} if(due) due.textContent=`Repetition: ${dueCount} due out of ${total}. Wrong = sooner, Right = later (1d → 3d → 7d → 14d).`; if(st) st.textContent="Repetition: Showing only due cards. Answer Again / Hard / Good / Easy."; updateSRSButtonsVisibilityV092(); }
+function updateSRSButtonsVisibilityV092(){ const b=document.getElementById('srsRatingButtonsV092'); const h=document.getElementById('srsRatingHintV092'); const show=window._sfFlashV092.mode==='repetition'; if(b) b.classList.toggle('hidden', !show); if(h) h.classList.toggle('hidden', !show); }
+function updateSRSV092(key, rating){ let srs=JSON.parse(localStorage.getItem('studyforge_srs_v092')||'{}'); const now=Date.now(); let rec=srs[key]||{lastReviewed:0, interval:1, ease:2.5, dueDate:0, reps:0}; rec.lastReviewed=now; rec.reps=(rec.reps||0)+1; const DAY=24*60*60*1000; if(rating==='again'){ rec.interval=0.01; rec.ease=Math.max(1.3,(rec.ease||2.5)-0.2); rec.dueDate=now+10*60*1000; } else if(rating==='hard'){ rec.interval=1; rec.ease=Math.max(1.3,(rec.ease||2.5)-0.1); rec.dueDate=now+1*DAY; } else if(rating==='good'){ if(rec.interval<=1) rec.interval=3; else if(rec.interval===3) rec.interval=7; else rec.interval=14; rec.dueDate=now+rec.interval*DAY; } else if(rating==='easy'){ if(rec.interval<=1) rec.interval=7; else rec.interval=14; rec.ease=(rec.ease||2.5)+0.15; rec.dueDate=now+rec.interval*DAY; } srs[key]=rec; localStorage.setItem('studyforge_srs_v092', JSON.stringify(srs)); }
+function rateFlashCardV092(r){ const title=(window._sfFlashV092.currentDeck?.title)||(typeof decks!=='undefined'&&decks[0]?.title)||'deck'; const idx=(typeof currentCardIndex!=='undefined'?currentCardIndex:0); updateSRSV092(title+"_"+idx, r); try{ if(typeof nextFlashCard==='function') nextFlashCard(); }catch(e){} }
+let _sfRegeneratedDeck=null;
+async function regenerateDeckV092(){
+  const st = document.getElementById('flashModeStatusV092');
+  const btn = document.getElementById('deckRegenerateBtnV092');
+  if (window._sfFlashV092.mode !== 'fixgaps') {
+    if (st) st.textContent = "Regenerate Deck only shows after finishing a Fix Gaps deck.";
+    alert("Regenerate Deck only works for Fix Gaps. Choose Fix Gaps, finish the deck, then Regenerate.");
+    return;
+  }
+  const wanted = getFlashWantedCount();
+  const failed = (window._sfFlashV092.failedList || []).map(function(c){
+    return { q: c.q || c.question || c, a: c.a || c.answer || '', readingText: c.readingText || '' };
+  });
+  const seen = new Set(); const failedUnique = [];
+  failed.forEach(function(c){ const k = String(c.q||'').toLowerCase().trim(); if (k && !seen.has(k)) { seen.add(k); failedUnique.push(c); } });
+  if (!failedUnique.length) {
+    if (st) st.textContent = "Fix Gaps Regenerate: No failed cards. You mastered all - no new deck needed.";
+    alert("No failed cards - you mastered them all! No new deck needed.");
+    return;
+  }
+  if (btn) { btn.disabled = true; btn.textContent = "Regenerating..."; }
+  if (st) st.textContent = "Fix Gaps Regenerate: " + failedUnique.length + " failed + filling to " + wanted + " (file first, then AI)...";
+  try {
+    const need = Math.max(0, wanted - failedUnique.length);
+    let fileQs = [];
+    const used = new Set(failedUnique.map(function(c){ return String(c.q||'').toLowerCase().trim(); }));
+    try { (typeof decks!=='undefined'?decks:[]).forEach(function(d){ (d.cards||[]).forEach(function(c){ used.add(String(c.q||c.question||'').toLowerCase().trim()); }); }); } catch(e){}
+    if (typeof materials!=='undefined') {
+      materials.forEach(function(m){
+        const lines = (m.content||'').split(/\n|\?/).filter(function(l){ return l.trim().length > 10; });
+        lines.forEach(function(l){
+          const q = l.trim(); const k = q.toLowerCase();
+          if (q && !used.has(k) && !fileQs.includes(q)) fileQs.push(q);
+        });
+      });
+    }
+    const fromFile = fileQs.slice(0, need).map(function(q){ return { q: q, a: '(from file)', readingText: '' }; });
+    const needAI = Math.max(0, need - fromFile.length);
+    let aiQs = [];
+    if (needAI > 0) {
+      try {
+        const failedText = failedUnique.map(function(c,i){ return (i+1)+". Q: "+c.q; }).join("\n");
+        const r = await callGeminiApi("Fix Gaps Regenerate. User failed these:\n"+failedText+"\nGenerate "+needAI+" NEW flashcard questions on SAME topics as failed ones, SAME language, do NOT translate, do NOT repeat failed or file ones. Return ONLY JSON array [{\"q\":\"...\",\"a\":\"...\"}].");
+        const txt = r?.text||''; const mm = txt.match(/\[.*\]/s); if (mm) aiQs = JSON.parse(mm[0]);
+      } catch(e){}
+    }
+    const allCards = failedUnique.concat(fromFile).concat(aiQs.map(function(q){ return { q: q.q||q.question||'', a: q.a||q.answer||'', readingText: q.readingText||'' }; })).slice(0, Math.max(wanted, failedUnique.length));
+    const baseTitle = (typeof activeReviewDeck!=='undefined' && activeReviewDeck?.title) || 'Deck';
+    const newTitle = "Fix Gaps - " + baseTitle + " (Regenerated)";
+    const newDeck = { title: newTitle, desc: "Failed cards + new fillers. Failed: "+failedUnique.length+", New: "+(allCards.length - failedUnique.length), cards: allCards };
+    if (typeof decks!=='undefined') decks.push(newDeck);
+    try { if (typeof saveAccountData==='function') await saveAccountData(); } catch(e){}
+    try { if (typeof renderDecks==='function') renderDecks(); } catch(e){}
+    window._sfFlashV092.failedList = [];
+    if (st) st.textContent = "Regenerate done: New deck '"+newTitle+"' - "+failedUnique.length+" failed + "+(allCards.length - failedUnique.length)+" new = "+allCards.length+" cards. Tap it to start.";
+    alert("New deck created: "+newTitle+"\n"+failedUnique.length+" failed + "+(allCards.length - failedUnique.length)+" new = "+allCards.length+" cards.\nTap it in Decks to start.");
+    if (btn) { btn.classList.add('hidden'); }
+  } catch(e) {
+    if (st) st.textContent = "Regenerate failed: "+e.message;
+    alert("Regenerate failed: "+e.message);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = "Regenerate Deck - Failed + New Cards"; }
+  }
+}
+function startRegeneratedDeckV092(){ const n=document.getElementById('githubNotifV092'); if(n) n.classList.add('hidden'); try{ if(typeof startFlashcardsGame==='function') startFlashcardsGame(); }catch(e){} }
+async function regenerateNoteMakerV092(){ const out=document.getElementById('noteMakerOutput'); const st=document.getElementById('noteMakerStatus'); if(!out||!out.textContent.trim()){ alert("Generate a note first, then Regenerate."); return; } if(st) st.textContent="Regenerating note — same materials, new version..."; try{ const content=(typeof noteMakerSourceText!=='undefined'?noteMakerSourceText:'')||(typeof materials!=='undefined'?materials.map(m=>m.content||'').join('\n').slice(0,8000):''); const r=await callGeminiApi(`Regenerate this note: SAME materials, NEW version, different wording, same language, do NOT translate. Materials: ${content.slice(0,8000)}`); if(out) out.textContent=r?.text||''; if(st) st.textContent="Regenerated! Same materials, new version."; }catch(e){ if(st) st.textContent="Regenerate failed: "+e.message; } }
+function startQuizModeV092(mode){ window._sfQuizMode=mode; const st=document.getElementById('quizModeStatusV092'); if(st) st.textContent = mode==='test' ? "Quiz Mode: Test — No hints." : "Quiz Mode: Practice — With hints."; window._sfPreGenMode='no'; }
+function isGameStartedV092(tabId){ try{
+  const tab=tabId||window._sfCurrentTabV092||'overview';
+  // FIX: no game started = no Gemini button, even if decks/materials exist
+  // Decks: only if a flashcard MODE was actually started (Recall / Fix Gaps / Repetition / No), not just because decks exist
+  if(tab==='decks') return !!(window._sfFlashV092 && window._sfFlashV092.mode);
+  if(tab==='quizzes') return (typeof activeQuizQuestions!=='undefined' && activeQuizQuestions.length>0) && !!(document.getElementById('quizPlay') && !document.getElementById('quizPlay').classList.contains('hidden'));
+  if(tab==='mindmap') return (document.getElementById('mindMapOutput')?.textContent?.trim()||'').length>10 && !!(document.getElementById('mindMapOutput') && !document.getElementById('mindMapOutput').classList.contains('hidden'));
+  if(tab==='notemaker') return (document.getElementById('noteMakerOutput')?.textContent?.trim()||'').length>10 && !!(document.getElementById('noteMakerOutput') && !document.getElementById('noteMakerOutput').classList.contains('hidden'));
+  if(tab==='homework') return (typeof hwParsedQuestions!=='undefined' && hwParsedQuestions.length>0) && !!(document.getElementById('hwSocraticSection') && !document.getElementById('hwSocraticSection').classList.contains('hidden'));
+  if(tab==='wordgame') return ((typeof wordGameCurrent!=='undefined'?wordGameCurrent.word:'')||'').trim().length>0 && !!(document.getElementById('wordGamePlay') && !document.getElementById('wordGamePlay').classList.contains('hidden'));
+  return false; }catch(e){ return false; } }
+function updateGeminiChatVisibilityV092(tabId){ const allowed=['decks','mindmap','notemaker','homework','quizzes','wordgame']; const tab=tabId||window._sfCurrentTabV092||'overview'; const show=allowed.includes(tab)&&isGameStartedV092(tab); const fab=document.getElementById('geminiChatFabV092'); if(fab) fab.style.display=show?'block':'none'; if(!show){ const p=document.getElementById('geminiChatPanelV092'); if(p) p.classList.add('hidden'); document.body.classList.remove('gemini-beside-open'); const app=document.getElementById('appContainer'); if(app) app.style.marginRight=''; } window._sfCurrentTabV092=tab; return show; }
+function clearGeminiChatHistoryV092(){ window._sfChatHistoryV092=[]; const box=document.getElementById('geminiChatMessagesV092'); if(box) box.innerHTML=''; }
+function openGeminiChatV092(){ const allowed=['decks','mindmap','notemaker','homework','quizzes','wordgame']; const cur=window._sfCurrentTabV092||'overview'; if(!allowed.includes(cur)){ alert('Gemini Chat is only available in Flashcards, Mind Map, Notes, Math Breaker, Quiz, and Guess the Word.'); return; } if(!isGameStartedV092(cur)){ alert('Start a game first — then Gemini Chat will appear.'); return; } let panel=document.getElementById('geminiChatPanelV092'); if(panel){ const willShow=panel.classList.contains('hidden'); panel.classList.toggle('hidden'); if(willShow&&window.innerWidth>=768){ document.body.classList.add('gemini-beside-open'); const app=document.getElementById('appContainer'); if(app) app.style.marginRight='380px'; } else { document.body.classList.remove('gemini-beside-open'); const app=document.getElementById('appContainer'); if(app) app.style.marginRight=''; } return; } panel=document.createElement('div'); panel.id='geminiChatPanelV092'; panel.className='fixed z-[9999] bg-white dark:bg-slate-900 border shadow-2xl flex flex-col'; if(window.innerWidth>=768){ panel.style.cssText='top:0; right:0; width:380px; height:100vh;'; document.body.classList.add('gemini-beside-open'); const app=document.getElementById('appContainer'); if(app) app.style.marginRight='380px'; } else { panel.style.cssText='top:0; left:0; width:100vw; height:100vh;'; } panel.innerHTML=`<div class="flex justify-between p-3 border-b"><b class="text-sm">💡 Gemini Chat</b><button onclick="closeGeminiChatPanelV092()" class="px-2 py-1 rounded-lg border text-xs">✕ Close</button></div><div id="geminiChatMessagesV092" class="flex-1 overflow-y-auto p-3 space-y-2 text-xs"></div><div class="p-2 border-t flex gap-2"><input id="geminiChatInputV092" placeholder="Ask about materials / current question..." class="flex-1 px-3 py-2 rounded-xl border text-xs bg-white dark:bg-slate-900"><button onclick="sendGeminiChatV092()" class="px-3 py-2 rounded-xl bg-brand-500 text-white text-xs font-bold">Send</button></div><p class="text-[10px] text-slate-400 px-3 pb-2">Only about materials / current question. 8s cooldown. History deleted after game ends.</p>`; document.body.appendChild(panel); renderGeminiChatV092(); }
+function closeGeminiChatPanelV092(){ const p=document.getElementById('geminiChatPanelV092'); if(p) p.classList.add('hidden'); document.body.classList.remove('gemini-beside-open'); const app=document.getElementById('appContainer'); if(app) app.style.marginRight=''; }
+window._sfChatHistoryV092=[]; window._sfChatLastSentV092=0;
+function renderGeminiChatV092(){ const box=document.getElementById('geminiChatMessagesV092'); if(!box) return; box.innerHTML=window._sfChatHistoryV092.map(m=>`<div class="${m.role==='user'?'text-right':''}"><span class="inline-block px-3 py-2 rounded-xl ${m.role==='user'?'bg-brand-500 text-white':'bg-slate-100 dark:bg-slate-800'} whitespace-pre-wrap">${String(m.text).replace(/</g,'&lt;')}</span></div>`).join(''); box.scrollTop=box.scrollHeight; }
+async function sendGeminiChatV092(){ const now=Date.now(); if(now-window._sfChatLastSentV092<8000){ alert("Please wait 8 seconds between messages."); return; } const inp=document.getElementById('geminiChatInputV092'); const text=(inp?.value||'').trim(); if(!text) return; window._sfChatLastSentV092=now; window._sfChatHistoryV092.push({role:'user', text}); if(inp) inp.value=''; renderGeminiChatV092(); const hiddenRules="You are StudyForge Gemini Chat. Rules (hidden, do NOT show): Only answer about materials or current question. If off-topic, say you can only help with this material / this question. In Quiz, give hint, NOT letter answer. Keep same language as material/video, do NOT translate."; const matText=(typeof materials!=='undefined'? materials.map(m=>(m.content||'').slice(0,4000)).join("\n\n").slice(0,12000):''); const curQ=document.getElementById('cardQuestionText')?.textContent||document.getElementById('quizQuestionText')?.textContent||''; try{ const r=await callGeminiApi(hiddenRules+"\nMaterials:\n"+matText+"\nCurrent question:\n"+curQ+"\nUser: "+text); window._sfChatHistoryV092.push({role:'ai', text:r?.text||"No reply."}); }catch(e){ window._sfChatHistoryV092.push({role:'ai', text:"Failed: "+e.message}); } renderGeminiChatV092(); }
+async function signInWithGoogleAuthModalV092(){ const st=document.getElementById('authGoogleStatus'); try{ if(st) st.textContent="Opening Google sign-in..."; const auth=window._sfAuth; if(!auth){ alert("Firebase not ready."); return; } const { signInWithPopup } = await import("https://www.gstatic.com/firebasejs/13.2.0/firebase-auth.js"); let provider=window._sfGoogleProvider; if(!provider){ const { GoogleAuthProvider } = await import("https://www.gstatic.com/firebasejs/13.2.0/firebase-auth.js"); provider=new GoogleAuthProvider(); window._sfGoogleProvider=provider; } const res=await signInWithPopup(auth, provider); const user=res.user; const email=user.email||""; const displayName=user.displayName||email.split('@')[0]||"Student"; if(st) st.textContent="Signed in as "+email; try{ if(typeof userProfile!=='undefined'){ if(!userProfile.username||userProfile.username==="Student") userProfile.username=displayName; userProfile.googleEmail=email; if(typeof saveAccountData==='function') await saveAccountData(); } localStorage.setItem('studyforge_local_gmail', email.toLowerCase()); }catch(e){} document.getElementById('authModal').classList.add('hidden'); const app=document.getElementById('appContainer'); if(app) app.classList.remove('hidden'); try{ if(typeof switchTab==='function') switchTab('overview'); }catch(e){} }catch(e){ if(st) st.textContent="Google sign-in failed: "+e.message; alert("Google sign-in failed: "+e.message); } }
+let _sfAutoSaveInProgress=false; let _sfAutoSaveTimer=null;
+function showAutoSaveIndicatorV092(){ const el=document.getElementById('autoSaveIndicatorV092'); if(!el) return; el.classList.remove('hidden'); el.classList.add('show','saving'); el.style.opacity='1'; el.textContent='💾 Saving...'; }
+function hideAutoSaveIndicatorV092(){ const el=document.getElementById('autoSaveIndicatorV092'); if(!el) return; el.classList.remove('saving'); el.textContent='💾 Saved ✓'; setTimeout(()=>{ el.classList.add('hide'); el.style.opacity='0'; setTimeout(()=>{ el.classList.add('hidden'); el.classList.remove('show','hide'); }, 500); }, 800); }
+async function autoSaveV092(){ if(_sfAutoSaveInProgress) return; _sfAutoSaveInProgress=true; showAutoSaveIndicatorV092(); try{ try{ if(typeof saveAccountData==='function') await saveAccountData(); }catch(e){} try{ if(typeof saveUserToServerV092==='function') await saveUserToServerV092(); }catch(e){} }catch(e){} finally{ _sfAutoSaveInProgress=false; hideAutoSaveIndicatorV092(); } }
+function startAutoSaveV092(){ if(_sfAutoSaveTimer) clearInterval(_sfAutoSaveTimer); _sfAutoSaveTimer=setInterval(()=>{ autoSaveV092(); }, 30000); }
+try{ if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', startAutoSaveV092); } else { startAutoSaveV092(); } }catch(e){}
+async function syncBeforeCloseV092(){ try{ if(typeof saveAccountData==='function'){ const p=saveAccountData(); if(p&&p.catch) p.catch(()=>{}); } }catch(e){} try{ const auth=window._sfAuth; if(auth?.currentUser){ const uid=auth.currentUser.uid; const localStorageData={}; try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k&&k.startsWith('studyforge_')) localStorageData[k]=localStorage.getItem(k); } }catch(e){} const payload={profile:(typeof userProfile!=='undefined'?userProfile:{}), materials:(typeof materials!=='undefined'?materials:[]), decks:(typeof decks!=='undefined'?decks:[]), localStorageData, gmail:(localStorage.getItem('studyforge_local_gmail')||''), settings:{username: currentUser, apiKey: apiKey}, apiKey: apiKey, lastUpdated:Date.now()}; try{ payload.checksum=await computeChecksumV092(payload); }catch(e){} const url="https://studyforge-d79bc-default-rtdb.asia-southeast1.firebasedatabase.app/users/"+uid+".json"; try{ const blob=new Blob([JSON.stringify(payload)], {type:'application/json'}); if(navigator.sendBeacon) navigator.sendBeacon(url, blob); }catch(e){} try{ fetch(url, {method:'PUT', body:JSON.stringify(payload), headers:{'Content-Type':'application/json'}, keepalive:true}).catch(()=>{}); }catch(e){} } }catch(e){} }
+window.addEventListener('beforeunload', function(){ try{ showAutoSaveIndicatorV092(); }catch(e){} syncBeforeCloseV092(); });
+window.addEventListener('pagehide', function(){ syncBeforeCloseV092(); });
+document.addEventListener('visibilitychange', function(){ if(document.visibilityState==='hidden') syncBeforeCloseV092(); });
+setInterval(()=>{ try{ updateGeminiChatVisibilityV092(window._sfCurrentTabV092||'overview'); }catch(e){} }, 2000);
+async function saveUserToServerV092(){ try{ const db=window._sfDB; const auth=window._sfAuth; if(!db||!auth?.currentUser) return false; const uid=auth.currentUser.uid; const {set, ref}=await import("https://www.gstatic.com/firebasejs/13.2.0/firebase-database.js"); const localStorageData={}; try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k&&k.startsWith('studyforge_')) localStorageData[k]=localStorage.getItem(k); } }catch(e){} const payload={profile:userProfile||{}, materials:(typeof materials!=='undefined'?materials:[]), decks:(typeof decks!=='undefined'?decks:[]), localStorageData, gmail:(localStorage.getItem('studyforge_local_gmail')||'')||(userProfile?.googleEmail||''), settings:{username: currentUser, apiKey: apiKey}, apiKey: apiKey, lastUpdated:Date.now()}; try{ payload.checksum=await computeChecksumV092(payload); }catch(e){} await set(ref(db, "users/"+uid), payload); return true; }catch(e){ return false; } }
+async function applyCloudDataV092(val){
+  if(!val) return false;
+  try{
+    if(val.profile && typeof userProfile !== 'undefined'){
+      Object.assign(userProfile, val.profile);
+    }
+    if(Array.isArray(val.materials) && typeof materials !== 'undefined'){
+      materials.length = 0;
+      val.materials.forEach(m => materials.push(m));
+    }
+    if(Array.isArray(val.decks) && typeof decks !== 'undefined'){
+      decks.length = 0;
+      val.decks.forEach(d => decks.push(d));
+    }
+    if(val.gmail) localStorage.setItem('studyforge_local_gmail', val.gmail.toLowerCase());
+     // API key is account data too — restore it from Google cloud (settings + apiKey)
+     try{ const cloudKey = (val.settings && val.settings.apiKey) || val.apiKey || ''; if(cloudKey){ apiKey = cloudKey; try{ if(typeof db !== 'undefined' && currentUser) await db.settings.put({ username: currentUser, apiKey: cloudKey }); }catch(e){} const inp = document.getElementById('settingsApiKey'); if(inp) inp.value = cloudKey; } }catch(e){}
+    // Refresh UI
+    try{ if(typeof updateStats === 'function') updateStats(); }catch(e){}
+    try{ if(typeof renderMaterialList === 'function') renderMaterialList(); }catch(e){}
+    try{ if(typeof renderDeckGrid === 'function') renderDeckGrid(); }catch(e){}
+    try{ if(typeof renderLeaderboardV092 === 'function') renderLeaderboardV092(); }catch(e){}
+    if(typeof showToastV092 === 'function') showToastV092("Account data restored from cloud.", "success");
+    return true;
+  }catch(e){ console.warn("applyCloudData failed", e); return false; }
+}
+async function restoreFromCloudOnLoginV092(){
+  try{
+    const val = await loadUserFromServerV092();
+    if(val) await applyCloudDataV092(val);
+  }catch(e){}
+}
+
+async function loadUserFromServerV092(){ try{ const db=window._sfDB; const auth=window._sfAuth; if(!db||!auth?.currentUser) return null; const uid=auth.currentUser.uid; const {get, ref}=await import("https://www.gstatic.com/firebasejs/13.2.0/firebase-database.js"); const snap=await get(ref(db, "users/"+uid)); if(!snap.exists()) return null; const val=snap.val(); try{ const ok=await verifyExportDataV092(val); if(!ok){ showTamperWarningV092('Server data blocked'); return null; } }catch(e){ return null; } if(val.localStorageData){ Object.keys(val.localStorageData).forEach(k=>{ if(k.startsWith('studyforge_')) localStorage.setItem(k, val.localStorageData[k]); }); } return val; }catch(e){ return null; } }
+// Fix PreGen: Quiz should NOT show Flashcards modal, Flashcards should
+(function(){
+  const _origTrigger = window.triggerPreGenFlow;
+  window.triggerPreGenFlow = function(type){
+    if(type==='quiz'){ window._sfPreGenMode='no'; document.getElementById('preGenModal')?.classList.add('hidden'); if(typeof executeGeneration==='function') executeGeneration(); return; }
+    if(_origTrigger) return _origTrigger(type);
+    document.getElementById('preGenModal')?.classList.remove('hidden');
+  };
+})();
+(function(){ if(document.getElementById('geminiChatFabV092')) return; const fab=document.createElement('button'); fab.id='geminiChatFabV092'; fab.textContent='💡'; fab.title='Gemini Chat'; fab.style.cssText='position:fixed; bottom:18px; right:18px; width:52px; height:52px; border-radius:9999px; background:#10b981; color:white; font-size:22px; border:none; box-shadow:0 8px 20px rgba(0,0,0,0.3); z-index:9998; cursor:pointer; display:none;'; fab.onclick=()=>openGeminiChatV092(); document.body.appendChild(fab); window._sfCurrentTabV092='overview'; })();
+</script>
+
+<style id="v092-allfixes">
+  #toastV092{ position:fixed; right:16px; bottom:88px; z-index:9999; max-width:320px; background:#0f172a; color:#fff; padding:12px 16px; border-radius:14px; font-size:12px; font-weight:600; box-shadow:0 10px 30px rgba(0,0,0,.35); opacity:0; transform:translateY(16px); transition:all .25s ease; pointer-events:none; }
+  #toastV092.show{ opacity:1; transform:translateY(0); pointer-events:auto; }
+  #toastV092.success{ background:#059669; } #toastV092.error{ background:#dc2626; } #toastV092.warn{ background:#d97706; }
+  .user-card-v092{ display:flex; gap:12px; align-items:center; padding:12px; border-radius:18px; background:rgba(255,255,255,.75); border:1px solid rgba(255,255,255,.3); cursor:pointer; }
+  .dark .user-card-v092{ background:rgba(15,23,42,.75); border-color:rgba(255,255,255,.08); }
+  .user-card-pfp-v092{ width:52px; height:52px; border-radius:14px; background:#ef4444; color:#fff; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:12px; flex-shrink:0; overflow:hidden; }
+  .user-card-username-v092{ background:#22c55e; color:#fff; padding:6px 10px; border-radius:10px; font-size:12px; font-weight:800; display:inline-block; }
+  .lb-row-v092{ display:flex; align-items:center; gap:10px; padding:12px 14px; border-radius:16px; background:#ef4444; color:#fff; cursor:pointer; font-size:12px; font-weight:700; }
+  .dark .lb-row-v092{ background:#dc2626; }
+  .lb-row-v092 .lb-username{ flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .lb-row-v092 .lb-grade{ background:rgba(0,0,0,.25); padding:2px 8px; border-radius:999px; font-size:11px; }
+  .winrate-wrap-v092{ position:relative; display:inline-block; cursor:pointer; }
+  .winrate-tip-v092{ display:none; position:absolute; bottom:130%; left:50%; transform:translateX(-50%); background:#0f172a; color:#fff; padding:8px 10px; border-radius:10px; font-size:11px; white-space:nowrap; z-index:9999; }
+  .winrate-tip-v092.show{ display:block; }
+  #birthdayConfirmModalV092{ position:fixed; inset:0; z-index:9999; display:none; align-items:center; justify-content:center; background:rgba(2,6,23,.8); padding:16px; }
+  #birthdayConfirmModalV092.open{ display:flex; }
+</style>
+<div id="toastV092" role="status"></div>
+<div id="birthdayConfirmModalV092">
+  <div class="glass-panel p-6 rounded-3xl w-full max-w-sm space-y-4 text-center">
+    <div class="text-3xl">Warning</div>
+    <h3 class="font-bold text-sm">Confirm <span id="birthdayConfirmLabelV092">birthday</span>?</h3>
+    <p class="text-xs text-slate-500">Warning, this can be only changed once per year! Confirm <span id="birthdayConfirmLabel2V092">birthday</span><span id="birthdayConfirmValueV092"></span>?</p>
+    <p class="text-[11px] text-slate-400">Use birthdate if it has year. If no year, it is celebrated as birthday (day + month).</p>
+    <div class="flex gap-2">
+      <button onclick="cancelBirthdayV092()" class="flex-1 py-2.5 rounded-xl bg-slate-200 dark:bg-slate-800 text-xs font-bold">Cancel</button>
+      <button onclick="doSaveBirthdayV092()" class="flex-1 py-2.5 rounded-xl bg-brand-500 text-white text-xs font-bold">Confirm</button>
+    </div>
+  </div>
+</div>
+<script id="v092-allfixes-js">
+function showToastV092(msg, type){
+  try{
+    var el=document.getElementById('toastV092');
+    if(!el){ el=document.createElement('div'); el.id='toastV092'; document.body.appendChild(el); }
+    el.textContent=msg||'Done';
+    el.className='show '+(type||'');
+    el.id='toastV092';
+    clearTimeout(window._sfToastTimerV092);
+    window._sfToastTimerV092=setTimeout(function(){ el.className=''; }, 3200);
+  }catch(e){ alert(msg); }
+}
+window._sfFlashCancelledV092=false;
+function cancelFlashModeV092(){
+  try{
+    window._sfFlashCancelledV092=true;
+    var loading=document.getElementById('deckGenLoadingView'); if(loading) loading.classList.add('hidden');
+    var main=document.getElementById('deckMainView'); if(main) main.classList.remove('hidden');
+    var st=document.getElementById('flashModeStatusV092'); if(st) st.textContent='Cancelled.';
+    showToastV092('Flashcards cancelled.', 'warn');
+  }catch(e){}
+}
+function cancelDeckGenV092(){ cancelFlashModeV092(); }
+function addFlashCancelButtonsV092(){
+  try{
+    var sel=document.getElementById('flashModeSelectorV092');
+    if(sel && !document.getElementById('flashCancelBtnV092')){
+      var b=document.createElement('button');
+      b.id='flashCancelBtnV092'; b.textContent='Cancel';
+      b.className='px-3 py-2 rounded-xl bg-slate-200 dark:bg-slate-800 text-xs font-bold';
+      b.onclick=cancelFlashModeV092;
+      var row=sel.querySelector('.flex.gap-2');
+      if(row) row.appendChild(b); else sel.appendChild(b);
+    }
+    var loading=document.getElementById('deckGenLoadingView');
+    if(loading && !document.getElementById('deckGenCancelBtnV092')){
+      var c=document.createElement('button');
+      c.id='deckGenCancelBtnV092'; c.textContent='Cancel';
+      c.className='mt-3 px-4 py-2 rounded-xl bg-slate-200 dark:bg-slate-800 text-xs font-bold';
+      c.onclick=cancelFlashModeV092;
+      loading.appendChild(c);
+    }
+  }catch(e){}
+}
+function fixGeminiLeakV092(){
+  try{
+    var fab=document.getElementById('geminiChatFabV092');
+    if(fab) fab.style.display='none';
+    var allowed=['decks','mindmap','notemaker','homework','quizzes','wordgame'];
+    var cur=window._sfCurrentTabV092||'overview';
+    var showHint=allowed.includes(cur) && (typeof isGameStartedV092==='function' ? isGameStartedV092(cur) : false);
+    document.querySelectorAll('button[onclick*="fetchAiTip"]').forEach(function(btn){ btn.style.display=showHint?'':'none'; });
+    if(typeof updateGeminiChatVisibilityV092==='function') updateGeminiChatVisibilityV092(cur);
+  }catch(e){}
+}
+(function(){
+  var orig=window.switchTab;
+  if(orig && !window._sfSwitchTabWrappedV092){
+    window._sfSwitchTabWrappedV092=true;
+    window.switchTab=function(tabId){ var r=orig.apply(this, arguments); try{ fixGeminiLeakV092(); }catch(e){} return r; };
+  }
+})();
+function getWinRateV092(){
+  try{
+    var total=0, wins=0;
+    var quiz=(typeof userProfile!=='undefined' && userProfile && userProfile.quizHistoryRecords) ? userProfile.quizHistoryRecords : [];
+    quiz.forEach(function(r){ total++; if((r.scorePercent||0)>=70) wins++; });
+    (window._sfWordGameHistoryV092||[]).forEach(function(r){ total++; if(r.won) wins++; });
+    (window._sfFlashReviewHistoryV092||[]).forEach(function(r){ total++; if(r.correct) wins++; });
+    (window._sfMathBreakerHistoryV092||[]).forEach(function(r){ total++; if(r.correct) wins++; });
+    var rate=total?Math.round((wins/total)*100):0;
+    return {rate:rate, total:total, wins:wins};
+  }catch(e){ return {rate:0, total:0, wins:0}; }
+}
+function getAvgScoreAllGamesV092(){
+  try{
+    var scores=[];
+    var quiz=(typeof userProfile!=='undefined' && userProfile && userProfile.quizHistoryRecords) ? userProfile.quizHistoryRecords : [];
+    quiz.forEach(function(r){ if(typeof r.scorePercent==='number') scores.push(r.scorePercent); });
+    (window._sfWordGameHistoryV092||[]).forEach(function(r){ if(typeof r.score==='number') scores.push(r.score); });
+    (window._sfFlashReviewHistoryV092||[]).forEach(function(r){ if(typeof r.score==='number') scores.push(r.score); });
+    (window._sfMathBreakerHistoryV092||[]).forEach(function(r){ if(typeof r.score==='number') scores.push(r.score); });
+    if(!scores.length){ if(typeof getAvgScoreV092==='function') return getAvgScoreV092(); return 0; }
+    return scores.reduce(function(a,b){return a+b;},0)/scores.length;
+  }catch(e){ return 0; }
+}
+function winRateTooltipHTMLV092(){
+  var w=getWinRateV092();
+  return '<span class="winrate-wrap-v092" onmouseenter="showWinRateTipV092(this)" onmouseleave="hideWinRateTipV092(this)" onclick="showWinRateTipMobileV092(this)" ontouchstart="showWinRateTipMobileV092(this)">Win Rate: '+w.rate+'%<span class="winrate-tip-v092">Win Rate: '+w.rate+'% - '+w.wins+' wins / '+w.total+' games played</span></span>';
+}
+function showWinRateTipV092(el){ try{ var tip=el.querySelector('.winrate-tip-v092'); if(tip){ var w=getWinRateV092(); tip.textContent='Win Rate: '+w.rate+'% - '+w.wins+' wins / '+w.total+' games played'; tip.classList.add('show'); } }catch(e){} }
+function hideWinRateTipV092(el){ try{ var tip=el.querySelector('.winrate-tip-v092'); if(tip) tip.classList.remove('show'); }catch(e){} }
+function showWinRateTipMobileV092(el){
+  try{
+    if(window.innerWidth>=768) return;
+    var tip=el.querySelector('.winrate-tip-v092'); if(!tip) return;
+    var w=getWinRateV092(); tip.textContent='Win Rate: '+w.rate+'% - '+w.wins+' wins / '+w.total+' games played';
+    tip.classList.add('show');
+    clearTimeout(window._sfWinTipTimerV092);
+    window._sfWinTipTimerV092=setTimeout(function(){ tip.classList.remove('show'); }, 5000);
+  }catch(e){}
+}
+var ROMAN_TO_GRADE={I:1,II:2,III:3,IV:4,V:5,VI:6,VII:7,VIII:8,IX:9,X:10,XI:11,XII:12};
+function detectGradeFromTextV092(text){
+  try{
+    if(!text) return null;
+    var t=(' '+text+' ').toLowerCase();
+    var m=t.match(/(kelas|grade|class|tingkat)\s*(ix|iv|v?i{0,3}|xii?|xi|x|1[0-2]|[1-9])\b/);
+    if(m){ var v=m[2].trim().toUpperCase(); if(ROMAN_TO_GRADE[v]) return ROMAN_TO_GRADE[v]; var n=parseInt(v,10); if(n>=1 && n<=12) return n; }
+    if(t.includes('kelas')||t.includes('grade')||t.includes('kisi')){
+      var m2=t.match(/\b(ix|viii|vii|vi|v|iv|iii|ii|i)\b/);
+      if(m2 && ROMAN_TO_GRADE[m2[1].toUpperCase()]) return ROMAN_TO_GRADE[m2[1].toUpperCase()];
+    }
+    var m3=t.match(/([1-9]|1[0-2])(st|nd|rd|th)\s*grade/);
+    if(m3) return parseInt(m3[1],10);
+    return null;
+  }catch(e){ return null; }
+}
+function detectSemesterV092(text){ try{ if(!text) return null; var tt=(' '+text+' ').toLowerCase(); if(tt.match(/semester\s*(ganjil|gasal|1|i\b)/) || tt.match(/sem(ester)?\s*1\b/) || tt.match(/smt\s*1\b/) || tt.match(/ganjil/) || tt.match(/gasal/)) return {semester:1, label:'Semester 1 (Ganjil)'}; if(tt.match(/semester\s*(genap|2|ii\b)/) || tt.match(/sem(ester)?\s*2\b/) || tt.match(/smt\s*2\b/) || tt.match(/genap/)) return {semester:2, label:'Semester 2 (Genap)'}; return null; }catch(e){ return null; } }
+function detectTahunAjaranV092(text){ try{ if(!text) return null; var m=text.match(/(tahun\s*(ajaran|pelajaran)|ta\s*|tp\s*)?\s*(20\d{2})\s*[\/\-\s]\s*(20\d{2})/i); if(m) return m[3]+'/'+m[4]; var m2=text.match(/\b(20\d{2})\s*\/\s*(20\d{2})\b/); if(m2) return m2[1]+'/'+m2[2]; return null; }catch(e){ return null; } }
+function detectCurriculumV092(text){ try{ if(!text) return null; var tt=(' '+text+' ').toLowerCase(); if(tt.includes('merdeka')) return 'Kurikulum Merdeka'; if(tt.includes('k13') || tt.includes('k-13') || tt.includes('kurikulum 2013')) return 'Kurikulum 2013 (K13)'; if(tt.includes('ktsp')) return 'KTSP'; if(tt.includes('kurikulum nasional') || tt.includes('kurikulum')) return 'Kurikulum Nasional (from text)'; return null; }catch(e){ return null; } }
+function currentSemesterInfoV092(){ var now=new Date(); var month=now.getMonth()+1; var year=now.getFullYear(); if(month>=7 && month<=12) return {label:'Semester 1 (Ganjil)', tahunAjaran: year+'/'+(year+1)}; return {label:'Semester 2 (Genap)', tahunAjaran: (year-1)+'/'+year}; }
+function recordGradeVoteV092(grade, meta, source){
+  try{
+    if(!grade || grade<1 || grade>12) return;
+    var votes=JSON.parse(localStorage.getItem('studyforge_grade_votes_v092')||'[]');
+    votes.push({grade:grade, semester:meta?meta.semester:null, ta:meta?meta.ta:null, curriculum:meta?meta.curriculum:null, source:source||'material', at:Date.now()});
+    if(votes.length>50) votes=votes.slice(-50);
+    localStorage.setItem('studyforge_grade_votes_v092', JSON.stringify(votes));
+    determineGradeFromAllMaterialsV092();
+  }catch(e){}
+}
+function determineGradeFromAllMaterialsV092(){
+  try{
+    var votes=JSON.parse(localStorage.getItem('studyforge_grade_votes_v092')||'[]');
+    if(!votes.length) return null;
+    var curInfo=currentSemesterInfoV092();
+    var currentTAVotes=votes.filter(function(v){ return v.ta && v.ta===curInfo.tahunAjaran; });
+    var pool=currentTAVotes.length?currentTAVotes:votes;
+    var counts={}; var lastAt={};
+    pool.forEach(function(v){ counts[v.grade]=(counts[v.grade]||0)+1; lastAt[v.grade]=Math.max(lastAt[v.grade]||0, v.at||0); });
+    var best=null, bestCount=-1, bestAt=-1;
+    Object.keys(counts).forEach(function(k){
+      var g=parseInt(k,10); var c=counts[k]; var at=lastAt[k];
+      if(c>bestCount || (c===bestCount && at>bestAt) || (c===bestCount && at===bestAt && g>best)) { best=g; bestCount=c; bestAt=at; }
+    });
+    if(best){
+      var prev=parseInt(localStorage.getItem('studyforge_grade_auto')||'',10);
+      localStorage.setItem('studyforge_grade_auto', String(best));
+      localStorage.setItem('studyforge_grade', String(best));
+      var sel=document.getElementById('wcGradeSelect'); if(sel) sel.value=String(best);
+      if(prev!==best){
+        showToastV092('App determined your grade: Grade '+best+' from '+pool.length+' material(s).', 'success');
+        if(typeof renderLeaderboardV092==='function') renderLeaderboardV092();
+      }
+      return best;
+    }
+    return null;
+  }catch(e){ return null; }
+}
+function rescanAllMaterialsForGradeV092(){
+  try{
+    var allTexts=[];
+    if(typeof materials!=='undefined' && Array.isArray(materials)){
+      materials.forEach(function(m){ allTexts.push(((m.title||'')+' '+(m.content||'')+' '+(m.name||''))); });
+    }
+    var transcriptArr=JSON.parse(localStorage.getItem('studyforge_transcript_materials_v092')||'[]');
+    transcriptArr.forEach(function(m){ allTexts.push(((m.title||'')+' '+(m.content||''))); });
+    if(!allTexts.length) return null;
+    localStorage.setItem('studyforge_grade_votes_v092', JSON.stringify([]));
+    allTexts.forEach(function(txt){
+      var g=detectGradeFromTextV092(txt);
+      if(g){
+        var sem=detectSemesterV092(txt); var ta=detectTahunAjaranV092(txt); var curr=detectCurriculumV092(txt);
+        var votes=JSON.parse(localStorage.getItem('studyforge_grade_votes_v092')||'[]');
+        votes.push({grade:g, semester:sem?sem.semester:null, ta:ta, curriculum:curr, source:'rescan-all-materials', at:Date.now()});
+        localStorage.setItem('studyforge_grade_votes_v092', JSON.stringify(votes));
+      }
+    });
+    return determineGradeFromAllMaterialsV092();
+  }catch(e){ return null; }
+}
+function runGradeDetectorV092(text, source){
+  try{
+    var g=detectGradeFromTextV092(text);
+    var sem=detectSemesterV092(text);
+    var ta=detectTahunAjaranV092(text);
+    var curr=detectCurriculumV092(text);
+    var curInfo=currentSemesterInfoV092();
+    var box=document.getElementById('gradeDetectorBoxV092');
+    if(!g && !sem && !ta && !curr){ if(box){ box.classList.add('hidden'); box.textContent=''; } return null; }
+    if(g) recordGradeVoteV092(g, {semester:sem?sem.semester:null, ta:ta, curriculum:curr}, source);
+    var determined=parseInt(localStorage.getItem('studyforge_grade_auto')||'',10) || g;
+    var html='Grade Detector (App determines grade - you cannot change it manually): ';
+    if(g) html+='found <b>Grade '+g+'</b> from '+(source||'material')+'. ';
+    if(determined) html+='App determined grade: <b>Grade '+determined+'</b> from all materials.<br>';
+    if(sem) html+='Semester: <b>'+sem.label+'</b> (from material)<br>';
+    else html+='Semester: <span class="text-slate-400">not in material</span> - current is <b>'+curInfo.label+'</b><br>';
+    if(ta) html+='Tahun Ajaran: <b>'+ta+'</b> (from material)<br>';
+    else html+='Tahun Ajaran: <span class="text-slate-400">not in material</span> - current TA is <b>'+curInfo.tahunAjaran+'</b><br>';
+    if(curr) html+='Curriculum: <b>'+curr+'</b> (from material)<br>';
+    else html+='Curriculum: <span class="text-slate-400">not in material</span> - national curriculum now is <b>Kurikulum Merdeka</b><br>';
+    if(box){ box.classList.remove('hidden'); box.innerHTML=html; }
+    return determined;
+  }catch(e){ return null; }
+}
+function confirmGradeV092(g){
+  try{ showToastV092('Grade is determined by app from your materials, not manual.', 'warn'); determineGradeFromAllMaterialsV092(); }catch(e){}
+}
+function thinkTitleAndGradeWithGeminiV092(script){
+  // App/Gemini thinks title + grade from content, user does NOT have to type title or grade
+  return new Promise(async function(resolve){
+    try{
+      var fallbackTitle = (script.split(/\n/).find(function(l){ return l.trim().length>5; })||'Transcript Material').trim().slice(0,60);
+      var fallback = {title: fallbackTitle, grade: null, semester: null, curriculum: null, tahunAjaran: null};
+      // If regex already finds grade, still ask Gemini only for title if needed - keep it fast, no extra call if title already in fallback
+      // Try Gemini for grade + title when no explicit grade in text
+      var hasExplicitGrade = !!detectGradeFromTextV092(script);
+      if(hasExplicitGrade){ resolve(fallback); return; }
+      if(typeof callGeminiApi !== 'function'){ resolve(fallback); return; }
+      var prompt = 'From this transcript, return ONLY JSON {"title": "short title", "grade": 1-12 or null, "semester": 1 or 2 or null, "curriculum": "Kurikulum Merdeka" or "Kurikulum 2013 (K13)" or null, "tahunAjaran": "2026/2027" or null}. Infer grade from difficulty / topic if not written. Do NOT explain. Transcript: ' + script.slice(0,4000);
+      var res = await callGeminiApi(prompt);
+      var data = parseAiJson(res.text);
+      if(data && (data.title || data.grade)){ resolve({title: data.title||fallbackTitle, grade: data.grade||null, semester: data.semester||null, curriculum: data.curriculum||null, tahunAjaran: data.tahunAjaran||null}); return; }
+      resolve(fallback);
+    }catch(e){ 
+      var fb = (script.split(/\n/).find(function(l){ return l.trim().length>5; })||'Transcript Material').trim().slice(0,60);
+      resolve({title: fb, grade: null, semester: null, curriculum: null, tahunAjaran: null});
+    }
+  });
+}
+async function saveTranscriptAsMaterialV092(){   try{
+    var title=(document.getElementById('transcriptTitleInputV092')?.value||'').trim();
+    var script=(document.getElementById('transcriptScriptInputV092')?.value||'').trim();
+    var st=document.getElementById('transcriptStatusV092');
+    if(!script){ if(st) st.textContent='Paste the script first.'; showToastV092('Paste the script first.', 'warn'); return; }
+    // APP THINKS TITLE + GRADE - user does NOT have to type title, and never types grade
+    if(!title){
+      if(st) st.textContent='App is thinking title + grade from script...';
+      var thought=await thinkTitleAndGradeWithGeminiV092(script);
+      title=thought.title||('Transcript Material - '+new Date().toLocaleDateString());
+      // If Gemini thought a grade, record it as a vote so ranking uses it even without explicit Kelas IX in text
+      if(thought.grade && thought.grade>=1 && thought.grade<=12){
+        try{ recordGradeVoteV092(thought.grade, {semester:thought.semester, ta:thought.tahunAjaran, curriculum:thought.curriculum}, 'transcript-gemini-think'); }catch(e){}
+      }
+      // Also fill the input so user sees what app thought
+      var titleInput=document.getElementById('transcriptTitleInputV092'); if(titleInput) titleInput.value=title;
+    }
+    var mat={title:title, content:script, type:'transcript', source:'transcriptmagic', at:Date.now()};
+    if(typeof materials!=='undefined' && Array.isArray(materials)){ materials.push(mat); }
+    else { var arr=JSON.parse(localStorage.getItem('studyforge_transcript_materials_v092')||'[]'); arr.push(mat); localStorage.setItem('studyforge_transcript_materials_v092', JSON.stringify(arr)); }
+    if(st) st.textContent='Saved as material: '+title+' (app thought title + grade)';
+    showToastV092('Saved as material: '+title, 'success');
+    runGradeDetectorV092(title+' '+script, 'transcript');
+    var cont=document.getElementById('materialListContainer');
+    if(cont){ var div=document.createElement('div'); div.className='p-3 rounded-xl bg-white dark:bg-slate-900 border text-xs'; div.innerHTML='<b>'+title.replace(/</g,'&lt;')+'</b><p class="text-slate-400">Transcript via TranscriptMagic - '+script.length+' chars</p>'; cont.prepend(div); }
+  }catch(e){ showToastV092('Save failed: '+e.message, 'error'); } }
+function clearTranscriptInputsV092(){ try{ var a=document.getElementById('transcriptTitleInputV092'); if(a) a.value=''; var b=document.getElementById('transcriptScriptInputV092'); if(b) b.value=''; var st=document.getElementById('transcriptStatusV092'); if(st) st.textContent=''; }catch(e){} }
+function ensureAutoSaveV092(){
+  try{
+    if(window._sfAutoSaveStartedV092) return; window._sfAutoSaveStartedV092=true;
+    setInterval(function(){
+      try{
+        var el=document.getElementById('autoSaveIndicatorV092');
+        if(el){ el.classList.add('saving'); el.textContent='Saving...'; }
+        if(typeof saveAllDataV092==='function') saveAllDataV092();
+        setTimeout(function(){ if(el){ el.classList.remove('saving'); el.textContent='Saved'; setTimeout(function(){ el.classList.remove('show'); }, 1200); } }, 800);
+      }catch(e){}
+    }, 30000);
+    window.addEventListener('beforeunload', function(){ try{ if(typeof saveAllDataV092==='function') saveAllDataV092(); if(typeof syncToFirebaseV092==='function') syncToFirebaseV092(); }catch(e){} });
+  }catch(e){}
+}
+window._sfPendingBirthdayV092=null;
+function confirmBirthdayV092(e){
+  try{
+    var input=document.getElementById('profileBirthday'); var val=input ? input.value : '';
+    if(!val) return;
+    var stored=localStorage.getItem('studyforge_birthday')||'';
+    if(stored===val) return;
+    window._sfPendingBirthdayV092=val;
+    var hasYear = val && val.split('-').length===3 && val.split('-')[0].length===4;
+    var label = hasYear ? 'birthdate' : 'birthday';
+    var l1=document.getElementById('birthdayConfirmLabelV092'); if(l1) l1.textContent=label;
+    var l2=document.getElementById('birthdayConfirmLabel2V092'); if(l2) l2.textContent=label;
+    var lv=document.getElementById('birthdayConfirmValueV092'); if(lv) lv.textContent=' ('+val+')';
+    var modal=document.getElementById('birthdayConfirmModalV092'); if(modal) modal.classList.add('open');
+    if(stored && input) input.value=stored;
+  }catch(err){}
+}
+function cancelBirthdayV092(){
+  try{
+    window._sfPendingBirthdayV092=null;
+    var modal=document.getElementById('birthdayConfirmModalV092'); if(modal) modal.classList.remove('open');
+    var input=document.getElementById('profileBirthday'); var stored=localStorage.getItem('studyforge_birthday')||''; if(input) input.value=stored;
+    showToastV092('Birthday change cancelled.', 'warn');
+  }catch(e){}
+}
+function doSaveBirthdayV092(){
+  try{
+    var val=window._sfPendingBirthdayV092;
+    var modal=document.getElementById('birthdayConfirmModalV092'); if(modal) modal.classList.remove('open');
+    if(!val) return;
+    var lastChange=parseInt(localStorage.getItem('studyforge_birthday_last_change')||'0',10);
+    var now=Date.now(); var oneYear=365*24*60*60*1000;
+    if(lastChange && (now-lastChange)<oneYear){ showToastV092('Birthday can only be changed once per year.', 'error'); var input=document.getElementById('profileBirthday'); var stored=localStorage.getItem('studyforge_birthday')||''; if(input) input.value=stored; return; }
+    localStorage.setItem('studyforge_birthday', val); localStorage.setItem('studyforge_birthday_last_change', String(now));
+    if(typeof saveProfileExtraV092==='function'){ var inp=document.getElementById('profileBirthday'); if(inp) inp.value=val; try{ saveProfileExtraV092(); }catch(e){} }
+    var hasYear = val.split('-').length===3 && val.split('-')[0].length===4;
+    showToastV092('Saved '+(hasYear?'birthdate':'birthday')+': '+val, 'success');
+    var st=document.getElementById('profileBirthdayStatus'); if(st) st.textContent='Saved '+(hasYear?'birthdate':'birthday')+' - can be changed once per year.';
+  }catch(e){ showToastV092('Birthday save failed.', 'error'); }
+}
+function sortLeaderboardAllGamesV092(list){
+  try{
+    return list.sort(function(a,b){
+      if(a.grade!==b.grade){ var d=(a.avg||0)-(b.avg||0); if(a.grade<b.grade && d>70) return -1; if(b.grade<a.grade && (b.avg-a.avg)>70) return 1; return b.grade-a.grade; }
+      if(Math.abs((a.avg||0)-(b.avg||0))>0.001) return b.avg-a.avg;
+      return (a.firstLearned||0)-(b.firstLearned||0);
+    });
+  }catch(e){ return list; }
+}
+function userCardHTMLV092(u, isMe){
+  var w=u.winRate!=null?u.winRate:getWinRateV092().rate;
+  var avg=(u.avg!=null?Math.round(u.avg):0);
+  return '<div class="user-card-v092" onclick="showUserProfileV092(\''+(u.username||'').replace(/'/g,"\\'")+'\')"><div class="user-card-pfp-v092">PFP</div><div class="flex-1 min-w-0"><span class="user-card-username-v092">'+(u.username||'You')+'</span><div class="text-[11px] text-slate-500 mt-1">Grade '+(u.grade||1)+' - <span>'+winRateTooltipHTMLV092()+'</span> - Avg Score: '+avg+'%</div></div><span class="text-[11px] text-brand-500 font-bold">'+(isMe?'You':'View')+' -&gt;</span></div>';
+}
+function requestCardHTMLV092(u){
+  return '<div class="user-card-v092" style="cursor:default"><div class="user-card-pfp-v092">PFP</div><div class="flex-1 min-w-0"><span class="user-card-username-v092">'+(u.username||'')+'</span></div><button onclick="acceptFriendV092(\''+(u.username||'').replace(/'/g,"\\'")+'\')" class="px-3 py-2 rounded-xl bg-green-500 text-white text-[11px] font-bold">ACCEPT</button><button onclick="ignoreFriendV092(\''+(u.username||'').replace(/'/g,"\\'")+'\')" class="px-3 py-2 rounded-xl bg-slate-200 dark:bg-slate-700 text-[11px] font-bold">IGNORE</button></div>';
+}
+function showUserProfileV092(username){ showToastV092('Profile view for '+username+' - coming in later update.', 'success'); }
+function acceptFriendV092(name){
+  try{
+    var reqs=JSON.parse(localStorage.getItem('studyforge_friend_requests_v092')||'[]'); reqs=reqs.filter(function(r){ return r.username!==name; }); localStorage.setItem('studyforge_friend_requests_v092', JSON.stringify(reqs));
+    var incoming=JSON.parse(localStorage.getItem('studyforge_friend_incoming_v092')||'[]'); incoming=incoming.filter(function(r){ return (r.username||r)!==name; }); localStorage.setItem('studyforge_friend_incoming_v092', JSON.stringify(incoming));
+    var friends=JSON.parse(localStorage.getItem('studyforge_friends_v092')||'[]');
+    if(!friends.find(function(f){ return f.username===name; })){ friends.push({username:name, grade:1, avg:70, firstLearned:Date.now(), winRate:0}); localStorage.setItem('studyforge_friends_v092', JSON.stringify(friends)); }
+    showToastV092('Accepted '+name, 'success'); if(typeof renderLeaderboardV092==='function') renderLeaderboardV092();
+  }catch(e){}
+}
+function ignoreFriendV092(name){
+  try{
+    var reqs=JSON.parse(localStorage.getItem('studyforge_friend_requests_v092')||'[]'); reqs=reqs.filter(function(r){ return r.username!==name; }); localStorage.setItem('studyforge_friend_requests_v092', JSON.stringify(reqs));
+    var incoming=JSON.parse(localStorage.getItem('studyforge_friend_incoming_v092')||'[]'); incoming=incoming.filter(function(r){ return (r.username||r)!==name; }); localStorage.setItem('studyforge_friend_incoming_v092', JSON.stringify(incoming));
+    showToastV092('Ignored '+name, 'warn'); if(typeof renderLeaderboardV092==='function') renderLeaderboardV092();
+  }catch(e){}
+}
+window._sfLeaderboardPageV092=1;
+function renderLeaderboardV092(){   try{
+    var box=document.getElementById('leaderboardList'); if(!box) return;
+    var myName=document.getElementById('profileUsernameDisplay')?.textContent||'You';
+    var w=getWinRateV092();
+    var totalGames=(w && (w.played!=null?w.played:w.total))||0;
+    var friendsRaw=JSON.parse(localStorage.getItem('studyforge_friends_v092')||'[]');
+    // EMPTY CHECK: no data = no friends + no games played + avg 0 -> show nothing to see here, not fake Grade 1 Avg 0%
+    var hasData = (friendsRaw.length>0) || (totalGames>0) || ((typeof userProfile!=='undefined' && userProfile && userProfile.quizHistoryRecords && userProfile.quizHistoryRecords.length>0));
+    if(!hasData){
+      box.innerHTML='<p class="text-xs text-slate-400">nothing to see here...</p>';
+      var fl=document.getElementById('friendsListV092'); if(fl) fl.innerHTML='<p class="text-[11px] text-slate-400">nothing to see here...</p>';
+      var yourCard=document.getElementById('yourCardV092'); if(yourCard) yourCard.innerHTML='<p class="text-xs text-slate-400">nothing to see here...</p>';
+      var mr=document.getElementById('myLeaderboardRank'); if(mr) mr.textContent='-';
+      var req=document.getElementById('friendRequestsV092'); if(req) req.innerHTML='<p class="text-[11px] text-slate-400">nothing to see here...</p>';
+      try{ renderFriendRequestsV092(); }catch(e){}
+      return;
+    }
+    var me={username:myName, grade:(typeof getGradeLevelV092==='function'?getGradeLevelV092():1), avg:getAvgScoreAllGamesV092(), firstLearned:parseInt(localStorage.getItem('studyforge_first_learned')||'0',10)||0, winRate:w.rate, isMe:true};
+    var friends=friendsRaw.map(function(f){ return {username:f.username, grade:f.grade||1, avg:(f.avg!=null?f.avg:70), firstLearned:f.firstLearned||Date.now(), winRate:f.winRate!=null?f.winRate:0}; });
+    var all=sortLeaderboardAllGamesV092([me, ...friends]);
+    var perPage=6; var totalPages=Math.max(1, Math.ceil(all.length/perPage));
+    if(window._sfLeaderboardPageV092>totalPages) window._sfLeaderboardPageV092=totalPages;
+    if(window._sfLeaderboardPageV092<1) window._sfLeaderboardPageV092=1;
+    var page=window._sfLeaderboardPageV092; var start=(page-1)*perPage; var pageItems=all.slice(start, start+perPage);
+    var html='<div class="space-y-2"><h4 class="font-bold text-xs">Leaderboard - Page '+page+' / '+totalPages+'</h4><p class="text-[11px] text-slate-400">Sorting: Grade Level - Average Score - Older Learner. Exception: If lower grade avg is &gt;70 more than higher grade avg, lower grade wins.</p>';
+    pageItems.forEach(function(u, idx){
+      var globalRank=start+idx+1; var icon='';
+      if(globalRank===1) icon='💎';
+      else if(globalRank===2) icon='🥇';
+      else if(globalRank===3) icon='🥈';
+      else if(globalRank===4) icon='🥉';
+      html+='<div class="lb-row-v092" onclick="showUserProfileV092(\''+(u.username||'').replace(/'/g,"\\'")+'\')"><span>'+(icon||globalRank)+'</span><span class="lb-username">['+(u.username||'')+']</span><span class="lb-grade">Grade '+(u.grade||1)+'</span><span class="lb-avg">Avg Score: '+Math.round(u.avg||0)+'%</span></div>';
+    });
+    html+='</div>';
+    // Pagination: Back hidden on first page, Next hidden on last page
+    if(totalPages>1){
+      html+='<div class="flex justify-between mt-3">';
+      if(page>1) html+='<button onclick="changeLeaderboardPageV092(-1)" class="px-3 py-1.5 rounded-xl bg-slate-200 dark:bg-slate-800 text-xs font-bold">Back</button>';
+      else html+='<span></span>';
+      if(page<totalPages) html+='<button onclick="changeLeaderboardPageV092(1)" class="px-3 py-1.5 rounded-xl bg-brand-500 text-white text-xs font-bold">Next</button>';
+      html+='</div>';
+    }
+    box.innerHTML=html;
+    var mr2=document.getElementById('myLeaderboardRank'); if(mr2) mr2.textContent='#'+(all.findIndex(function(u){ return u.username===myName; })+1);
+    var fl2=document.getElementById('friendsListV092'); if(fl2) fl2.innerHTML=friends.length?friends.map(function(f){ return '<div class="flex justify-between p-2 rounded-xl bg-white dark:bg-slate-900 border"><span class="text-xs">'+f.username+'</span><span class="text-[11px]">Grade '+f.grade+' - '+Math.round(f.avg)+'%</span></div>'; }).join(''):'<p class="text-[11px] text-slate-400">nothing to see here...</p>';
+    try{ renderFriendRequestsV092(); }catch(e){}
+    // Your Card - also show nothing to see here if no data (already handled above, this is for hasData case)
+    var yourCard2=document.getElementById('yourCardV092'); if(yourCard2){ /* kept from previous render - do not overwrite if already filled by other code */ }
+  }catch(e){ console.log(e); } }
+function changeLeaderboardPageV092(delta){ window._sfLeaderboardPageV092=Math.max(1, (window._sfLeaderboardPageV092||1)+delta); renderLeaderboardV092(); }
+(function(){
+  var origHandle=window.handleGeneralMaterialUpload;
+  if(origHandle && !window._sfGradeHookV092){
+    window._sfGradeHookV092=true;
+    window.handleGeneralMaterialUpload=function(e){
+      var files=e && e.target && e.target.files ? Array.from(e.target.files) : [];
+      files.forEach(function(f){ runGradeDetectorV092(f.name, 'file name'); });
+      return origHandle.apply(this, arguments);
+    };
+  }
+})();
+document.addEventListener('DOMContentLoaded', function(){ try{ addFlashCancelButtonsV092(); fixGeminiLeakV092(); ensureAutoSaveV092(); var storedBd=localStorage.getItem('studyforge_birthday')||''; var inp=document.getElementById('profileBirthday'); if(inp && storedBd) inp.value=storedBd; if(typeof renderLeaderboardV092==='function') renderLeaderboardV092(); }catch(e){} });
+setTimeout(function(){ try{ addFlashCancelButtonsV092(); fixGeminiLeakV092(); ensureAutoSaveV092(); }catch(e){} }, 800);
+</script>
+
+ <script>
+ function useTranscriptForMindMapV092(){
+   const ta = document.getElementById('mindMapTranscriptInputV092');
+   const st = document.getElementById('mindMapTranscriptStatusV092');
+   const text = (ta?.value || '').trim();
+   if(!text){ if(st) st.textContent = 'Paste the transcript first.'; return; }
+   const topicEl = document.getElementById('mindMapTopic');
+   if(topicEl) topicEl.value = text.slice(0, 2000);
+   if(st) st.textContent = 'Transcript set as mind map source (' + text.length + ' chars). Click Generate Mind Map.';
+   if(typeof materials !== 'undefined'){ try{ materials.push({name: 'Transcript (Mind Map)', content: text, type: 'transcript'}); }catch(e){} }
+ }
+ function useTranscriptForNoteMakerV092(){
+   const ta = document.getElementById('noteMakerTranscriptInputV092');
+   const st = document.getElementById('noteMakerTranscriptStatusV092');
+   const text = (ta?.value || '').trim();
+   if(!text){ if(st) st.textContent = 'Paste the transcript first.'; return; }
+   if(typeof noteMakerSourceText !== 'undefined') noteMakerSourceText = text; else window.noteMakerSourceText = text;
+   const status = document.getElementById('noteMakerFileStatus');
+   if(status){ status.classList.remove('hidden'); status.textContent = 'Ready from transcript (' + text.length + ' chars)'; status.classList.add('text-emerald-500'); }
+   if(st) st.textContent = 'Transcript set as notes source. Click Generate Notes.';
+   if(typeof materials !== 'undefined'){ try{ materials.push({name: 'Transcript (Note Maker)', content: text, type: 'transcript'}); }catch(e){} }
+ }
+ </script>
+
+<script> // Auto-restore from Google cloud when already signed in (page reload) - API key included
+(function(){ function tryRestore(){ try{ const auth = window._sfAuth; if(!auth) return; auth.onAuthStateChanged && auth.onAuthStateChanged(async (user) => { if(user){ setTimeout(() => { restoreFromCloudOnLoginV092(); }, 800); } }); }catch(e){} } if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', tryRestore); else setTimeout(tryRestore, 500); })(); </script>
 </body>
+
 </html>
