@@ -6090,6 +6090,107 @@ setTimeout(function(){ try{ addFlashCancelButtonsV092(); fixGeminiLeakV092(); en
 
 <script> // Auto-restore from Google cloud when already signed in (page reload) - API key included
 (function(){ function tryRestore(){ try{ const auth = window._sfAuth; if(!auth) return; auth.onAuthStateChanged && auth.onAuthStateChanged(async (user) => { if(user){ setTimeout(() => { restoreFromCloudOnLoginV092(); }, 800); } }); }catch(e){} } if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', tryRestore); else setTimeout(tryRestore, 500); })(); </script>
+
+<script> // Google connect persistence fix V0.92 — one canonical UI + all 3 buttons do full sync
+(function(){
+  function updateGoogleUIV092(email){
+    try{
+      var e = (email||'').trim();
+      var emailEl = document.getElementById('profileGoogleEmailText');
+      if(emailEl) emailEl.textContent = e ? e : 'Not connected';
+      var stEl = document.getElementById('profileGoogleStatusText');
+      if(stEl) stEl.textContent = e ? ('Connected to ' + e) : 'Connect to sync & transfer. If you already have a Gmail, we show it here.';
+      var gEl = document.getElementById('googleStatus');
+      if(gEl) gEl.textContent = e ? ('Signed in as ' + e) : 'Not signed in with Google.';
+      var authSt = document.getElementById('authGoogleStatus');
+      if(authSt && e) authSt.textContent = 'Signed in as ' + e;
+      var btn = document.getElementById('profileGoogleConnectBtn');
+      if(btn) btn.textContent = e ? 'Connected — Change Google Account' : 'Connect to Google Account';
+      var btn2 = document.getElementById('googleSignInBtn');
+      if(btn2) btn2.textContent = e ? ('Connected: ' + e) : 'Sign in with Google';
+    }catch(err){}
+  }
+  function refreshGoogleUIV092(){
+    try{
+      var fbEmail = '';
+      try{ fbEmail = (window._sfAuth && window._sfAuth.currentUser && window._sfAuth.currentUser.email) || ''; }catch(err){}
+      var saved = '';
+      try{ saved = (typeof userProfile !== 'undefined' && userProfile && userProfile.googleEmail) || ''; }catch(err){}
+      if(!saved){ try{ saved = localStorage.getItem('studyforge_local_gmail') || ''; }catch(err){} }
+      var email = fbEmail || saved || '';
+      if(email && typeof userProfile !== 'undefined' && userProfile){ userProfile.googleEmail = email; }
+      updateGoogleUIV092(email);
+      return email;
+    }catch(err){ return ''; }
+  }
+  window.updateGoogleUIV092 = updateGoogleUIV092;
+  window.refreshGoogleUIV092 = refreshGoogleUIV092;
+  // Show saved link immediately on load — do NOT wait for Firebase, and do NOT blank it if Firebase says signed-out (file:// origins lose Firebase session)
+  document.addEventListener('DOMContentLoaded', function(){ setTimeout(refreshGoogleUIV092, 300); });
+  window.addEventListener('load', function(){ setTimeout(refreshGoogleUIV092, 800); setTimeout(refreshGoogleUIV092, 2500); });
+  // Force local persistence so refresh keeps Firebase session when opened via http/https (not file://)
+  async function ensurePersistence(){
+    try{
+      if(!window._sfAuth) return false;
+      var m = await import('https://www.gstatic.com/firebasejs/13.2.0/firebase-auth.js');
+      if(m.setPersistence && m.browserLocalPersistence){
+        try{ await m.setPersistence(window._sfAuth, m.browserLocalPersistence); }catch(err){}
+      }
+      return true;
+    }catch(err){ return false; }
+  }
+  // Hook auth state: update UI + restore cloud when Firebase resolves
+  var authHooked = false;
+  function hookAuth(){
+    try{
+      var auth = window._sfAuth;
+      if(!auth || !auth.onAuthStateChanged){ setTimeout(hookAuth, 500); return; }
+      if(authHooked) return; authHooked = true;
+      ensurePersistence();
+      auth.onAuthStateChanged(function(user){
+        if(user && user.email){
+          try{ localStorage.setItem('studyforge_local_gmail', user.email.toLowerCase()); }catch(err){}
+          try{ if(typeof userProfile !== 'undefined' && userProfile) userProfile.googleEmail = user.email; }catch(err){}
+          updateGoogleUIV092(user.email);
+          if(typeof restoreFromCloudOnLoginV092 === 'function'){ setTimeout(function(){ restoreFromCloudOnLoginV092(); }, 800); }
+        } else {
+          // Firebase session gone (e.g. file://, cleared storage) — keep showing saved link from profile/localStorage, do NOT show "Not connected"
+          refreshGoogleUIV092();
+        }
+      });
+    }catch(err){}
+  }
+  hookAuth();
+  // Wrap all 3 Google buttons + loadAccountData so they all do the SAME full sync: profile + localStorage + IndexedDB + Firebase + UI
+  var wrapped = {};
+  async function afterGoogleSignIn(){
+    try{
+      var auth = window._sfAuth;
+      var email = (auth && auth.currentUser && auth.currentUser.email) || (typeof userProfile !== 'undefined' && userProfile && userProfile.googleEmail) || '';
+      if(!email){ try{ email = localStorage.getItem('studyforge_local_gmail') || ''; }catch(err){} }
+      if(email){
+        try{ if(typeof userProfile !== 'undefined' && userProfile) userProfile.googleEmail = email; }catch(err){}
+        try{ localStorage.setItem('studyforge_local_gmail', email.toLowerCase()); }catch(err){}
+        try{ if(typeof saveAccountData === 'function') await saveAccountData(); }catch(err){}
+        try{ if(typeof saveUserToServerV092 === 'function') await saveUserToServerV092(); }catch(err){}
+        updateGoogleUIV092(email);
+      }
+    }catch(err){}
+    refreshGoogleUIV092();
+  }
+  function tryWrap(){
+    try{
+      if(window.signInWithGoogleProfile && !wrapped.profile){ wrapped.profile = true; var o1 = window.signInWithGoogleProfile; window.signInWithGoogleProfile = async function(){ var r = await o1.apply(this, arguments); await afterGoogleSignIn(); return r; }; }
+      if(window.signInWithGoogle && !wrapped.settings){ wrapped.settings = true; var o2 = window.signInWithGoogle; window.signInWithGoogle = async function(){ var r = await o2.apply(this, arguments); await afterGoogleSignIn(); return r; }; }
+      if(window.signInWithGoogleAuthModalV092 && !wrapped.modal){ wrapped.modal = true; var o3 = window.signInWithGoogleAuthModalV092; window.signInWithGoogleAuthModalV092 = async function(){ var r = await o3.apply(this, arguments); await afterGoogleSignIn(); return r; }; }
+      if(window.loadAccountData && !wrapped.load){ wrapped.load = true; var o4 = window.loadAccountData; window.loadAccountData = async function(){ var r = await o4.apply(this, arguments); setTimeout(refreshGoogleUIV092, 100); return r; }; }
+    }catch(err){}
+    if(!wrapped.profile || !wrapped.settings || !wrapped.modal){ setTimeout(tryWrap, 600); }
+  }
+  setTimeout(tryWrap, 500);
+})();
+</script>
+
 </body>
 
 </html>
