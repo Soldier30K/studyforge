@@ -1084,98 +1084,108 @@
 <div id="content-leaderboard" class="hidden space-y-6"><div class="glass-panel p-6 sm:p-8 rounded-3xl shadow-xl space-y-4"><h3 class="text-lg font-bold">🏆 Leaderboard</h3><p class="text-xs text-slate-400">Sorting: Grade Level → Average Score → Older Learner. Exception: If Grade 1 avg is >70 more than Grade 2 avg, Grade 1 wins.</p><div class="flex gap-2"><input id="friendSearchInput" type="text" placeholder="Search username to add friend..." class="flex-1 px-3 py-2 rounded-xl border text-xs bg-white dark:bg-slate-900"><button onclick="sendFriendRequestV092()" class="px-4 py-2 rounded-xl bg-brand-500 text-white text-xs font-bold">Send Request</button></div><p id="friendStatus" class="text-[11px] text-slate-400"></p><div class="space-y-2"><h4 class="font-bold text-xs">Friend Requests</h4><div id="friendRequestsList" class="space-y-2"><p class="text-[11px] text-slate-400">No requests.</p></div></div><div class="space-y-2"><h4 class="font-bold text-xs">Friends</h4><div id="friendsListV092" class="space-y-2"></div></div><div id="leaderboardList" class="space-y-2"></div><p class="text-[11px] text-slate-400">Your rank: <b id="myLeaderboardRank">-</b></p></div></div>
 <!-- TAB: PROFILE -->
                 <div id="content-profile" class="hidden space-y-6">
-                    <div class="glass-panel p-6 sm:p-8 rounded-3xl shadow-xl max-w-xl mx-auto space-y-6">
-                        <div class="flex items-center space-x-4">
-                            <div id="profileAvatarContainer" class="w-16 h-16 sm:w-20 sm:h-20 rounded-3xl bg-brand-500/20 bg-cover bg-center border-2 border-brand-500 flex items-center justify-center text-brand-500 text-xl sm:text-2xl font-bold shadow-lg flex-shrink-0">
+                    <div class="glass-panel p-6 sm:p-8 rounded-3xl shadow-xl max-w-3xl mx-auto space-y-5">
+                        <!-- Header -->
+                        <div class="flex items-center gap-4">
+                            <div id="profileAvatarContainer" class="w-20 h-20 rounded-full bg-brand-500/20 bg-cover bg-center border-4 border-brand-500 flex items-center justify-center text-brand-500 text-2xl font-bold shadow-lg flex-shrink-0">
                                 <i id="profileDefaultIcon" class="fa-solid fa-user"></i>
                             </div>
-                            <div class="overflow-hidden">
-                                <h3 id="profileUsernameDisplay" class="text-base sm:text-lg font-bold truncate">Student</h3>
-                                <p id="profileBadgeSubtitle" class="text-xs text-brand-500 font-semibold">🌱 Novice Scholar</p>
+                            <div>
+                                <h3 id="profileUsernameDisplay" class="text-2xl font-black truncate">Student</h3>
+                                <p id="profileBadgeSubtitle" class="text-sm text-brand-500 font-semibold mt-1">🌱 Novice Scholar</p>
                             </div>
                         </div>
 
-                        <!-- Google Account - INTEGRATED INSIDE PROFILE, NOT SEPARATE CARD (V0.92 fix) -->
-                        <div class="space-y-2 p-4 rounded-2xl bg-slate-100/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800">
-                            <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 rounded-full bg-white border flex items-center justify-center text-base font-black text-slate-700 flex-shrink-0">G</div>
-                                <div class="flex-1 min-w-0">
-                                    <p class="text-xs font-bold truncate" id="profileGoogleEmailText">Not connected</p>
-                                    <p class="text-[11px] text-slate-400" id="profileGoogleStatusText">Connect to sync & transfer. If you already have a Gmail, we show it here.</p>
+                        <!-- Stat Cards (white style like mockup) -->
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                            <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl text-center shadow-sm border border-slate-200 dark:border-slate-700">
+                                <span class="text-[11px] text-slate-500 dark:text-slate-400 font-medium block">Streak 🔥</span>
+                                <span id="profileStreakText" class="text-xl font-black text-amber-500 block mt-1">0</span>
+                            </div>
+                            <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl text-center shadow-sm border border-slate-200 dark:border-slate-700">
+                                <span class="text-[11px] text-slate-500 dark:text-slate-400 font-medium block">Coins 🪙</span>
+                                <span id="profileCoinsText" class="text-xl font-black text-amber-500 block mt-1">0</span>
+                            </div>
+                            <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl text-center shadow-sm border border-slate-200 dark:border-slate-700">
+                                <span class="text-[11px] text-slate-500 dark:text-slate-400 font-medium block">Total XP</span>
+                                <span id="profileXpText" class="text-xl font-black text-brand-500 block mt-1">0</span>
+                            </div>
+                            <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl text-center shadow-sm border border-slate-200 dark:border-slate-700">
+                                <span class="text-[11px] text-slate-500 dark:text-slate-400 font-medium block">Quizzes</span>
+                                <span id="profileQuizText" class="text-xl font-black block mt-1">0</span>
+                            </div>
+                        </div>
+
+                        <!-- Level Progress -->
+                        <div class="space-y-2">
+                            <div class="flex justify-between text-sm font-semibold">
+                                <span id="profileLevelText">Level 1</span>
+                                <span id="xpProgressText">0 / 100 XP</span>
+                            </div>
+                            <div class="w-full h-3 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                                <div id="xpProgressBar" class="h-full bg-brand-500 transition-all duration-500" style="width: 0%"></div>
+                            </div>
+                        </div>
+
+                        <!-- Google + Personal Info side by side -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="space-y-2 p-4 rounded-2xl bg-slate-100/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 rounded-full bg-white border flex items-center justify-center text-base font-black text-slate-700 flex-shrink-0">G</div>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-xs font-bold truncate" id="profileGoogleEmailText">Not connected</p>
+                                        <p class="text-[11px] text-slate-400" id="profileGoogleStatusText">Connect to sync & transfer.</p>
+                                    </div>
                                 </div>
+                                <button id="profileGoogleConnectBtn" onclick="signInWithGoogleProfile()" class="w-full px-4 py-2.5 rounded-xl bg-white border border-slate-300 text-xs font-bold text-slate-700 hover:bg-slate-50">Connect to Google Account</button>
                             </div>
-                            <button id="profileGoogleConnectBtn" onclick="signInWithGoogleProfile()" class="w-full px-4 py-2.5 rounded-xl bg-white border border-slate-300 text-xs font-bold text-slate-700 hover:bg-slate-50">Connect to Google Account</button>
-                            <p class="text-[11px] text-slate-400">Button stays even after connecting — tap again to re-connect / switch account.</p>
-                        </div><div class="space-y-3 p-4 rounded-2xl bg-slate-100/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800"><h4 class="font-bold text-xs uppercase tracking-widest text-slate-400">Profile Info</h4><div class="grid grid-cols-2 gap-2"><label class="text-xs">Gender<select id="profileGender" class="w-full px-3 py-2 rounded-xl border text-xs bg-white dark:bg-slate-900" onchange="saveProfileExtraV092()"><option value="">Select</option><option value="Male">Male</option><option value="Female">Female</option></select></label><label class="text-xs">Birthday<input id="profileBirthday" type="date" class="w-full px-3 py-2 rounded-xl border text-xs bg-white dark:bg-slate-900" onchange="confirmBirthdayV092(event)"></label></div><p class="text-[11px] text-slate-400">you don't have to put your birthdate's year but it can help us to know how old are you to celebrate your birthday🎉 — Birthday celebrated with day + month even without year. Can be changed once per year.</p><p class="text-[11px] text-slate-400">Longest Streak: <b id="profileLongestStreak">0 days</b> • Current Streak: <b id="profileCurrentStreak">0 days</b></p><p id="profileBirthdayStatus" class="text-[11px] text-slate-400"></p></div>
-<!-- Profile Picture Upload Input -->
-                        <div class="space-y-2 p-4 rounded-2xl glass-panel">
-                            <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Custom Profile Picture (.gif requires shop unlock)</label>
-                            <input type="file" id="pfpFileInput" accept="image/*" onchange="handlePfpUpload(event)" class="text-xs text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-brand-500/10 file:text-brand-500 hover:file:bg-brand-500/20 cursor-pointer w-full">
+
+                            <div class="space-y-3 p-4 rounded-2xl bg-slate-100/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800">
+                                <h4 class="font-bold text-xs uppercase tracking-widest text-slate-400">Personal Info</h4>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <label class="text-xs">Gender
+                                        <select id="profileGender" class="w-full px-3 py-2 rounded-xl border text-xs bg-white dark:bg-slate-900" onchange="saveProfileExtraV092()">
+                                            <option value="">Select</option>
+                                            <option value="Male">Male</option>
+                                            <option value="Female">Female</option>
+                                        </select>
+                                    </label>
+                                    <label class="text-xs">Birthday
+                                        <input id="profileBirthday" type="date" class="w-full px-3 py-2 rounded-xl border text-xs bg-white dark:bg-slate-900" onchange="confirmBirthdayV092(event)">
+                                    </label>
+                                </div>
+                                <p id="profileBirthdayStatus" class="text-[11px] text-slate-400"></p>
+                            </div>
                         </div>
 
-                        <!-- Account Security & Show Password Security Quiz Trigger -->
-                        <div class="space-y-2 p-4 rounded-2xl glass-panel">
-                            <label class="text-xs font-semibold text-slate-400 uppercase tracking-widest">Account Security Verification</label>
-                            <div class="flex items-center space-x-2">
-                                <input type="password" id="profilePasswordInput" value="••••••••" readonly class="w-full bg-slate-100 dark:bg-slate-900 px-3 py-2.5 rounded-xl text-xs border border-slate-200 dark:border-slate-800" />
-                                <button onclick="triggerPasswordSecurityQuiz()" class="px-4 py-2.5 bg-brand-500 hover:bg-brand-600 text-white font-bold rounded-xl text-xs transition-all whitespace-nowrap shadow-md">
-                                    Show Password
+                        <!-- Edit Profile + Account Data side by side -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="space-y-2 p-4 rounded-2xl glass-panel">
+                                <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Edit Profile</label>
+                                <button type="button" onclick="openEditProfileModal()" class="w-full py-2.5 bg-brand-500 hover:bg-brand-600 text-white font-bold rounded-xl text-xs transition-all shadow-md flex items-center justify-center space-x-2">
+                                    <i class="fa-solid fa-user-pen"></i>
+                                    <span>Edit</span>
+                                </button>
+                            </div>
+
+                            <div class="space-y-2 p-4 rounded-2xl glass-panel border border-brand-500/30">
+                                <label class="block text-xs font-bold text-brand-500 uppercase tracking-widest">Account Data</label>
+                                <button onclick="downloadAccountData()" class="w-full py-2.5 bg-brand-500 hover:bg-brand-600 text-white font-bold rounded-xl text-xs transition-all shadow-md flex items-center justify-center space-x-2">
+                                    <i class="fa-solid fa-download"></i>
+                                    <span>Download Data</span>
                                 </button>
                             </div>
                         </div>
 
-                        <!-- Titles & Emoji Badges Selector -->
+                        <!-- Title Selector (kept) -->
                         <div class="space-y-2 p-4 rounded-2xl glass-panel">
                             <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest">Equipped Badge & Title</label>
                             <select id="equippedTitleSelect" onchange="changeEquippedTitle(this.value)" class="w-full px-3 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs focus:outline-none focus:border-brand-500 font-semibold">
                             </select>
                         </div>
 
-                        <!-- Download Account Data Section -->
-                        <div class="space-y-2 p-4 rounded-2xl glass-panel border border-brand-500/30">
-                            <label class="block text-xs font-bold text-brand-500 uppercase tracking-widest">Account Transfer Data</label>
-                            <p class="text-[11px] text-slate-400">Want to transfer your account to another device? then download your data here</p>
-                            <button onclick="downloadAccountData()" class="w-full py-2.5 bg-brand-500 hover:bg-brand-600 text-white font-bold rounded-xl text-xs transition-all shadow-md flex items-center justify-center space-x-2">
-                                <i class="fa-solid fa-download"></i>
-                                <span>Download Account Data</span>
-                            </button>
-                        </div>
-
-                        <div class="space-y-2 p-4 rounded-2xl glass-panel">
-                            <div class="flex justify-between text-xs font-semibold">
-                                <span>Level Progression</span>
-                                <span id="xpProgressText">0 / 100 XP</span>
-                            </div>
-                            <div class="w-full h-3 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
-                                <div id="xpProgressBar" class="h-full bg-brand-500 transition-all duration-500" style="width: 0%"></div>
-                            </div>
-                            <div class="flex justify-between text-[10px] text-slate-400">
-                                <span id="profileLevelText">Level 1</span>
-                                <span id="xpPercentText">0%</span>
-                            </div>
-                        </div>
-
-                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-                            <div class="p-3 sm:p-4 rounded-2xl glass-panel text-center">
-                                <span class="text-[10px] text-slate-400 block mb-1">Streak</span>
-                                <span id="profileStreakText" class="text-sm sm:text-base font-black text-amber-500">0 🔥</span>
-                            </div>
-                            <div class="p-3 sm:p-4 rounded-2xl glass-panel text-center">
-                                <span class="text-[10px] text-slate-400 block mb-1">Coins</span>
-                                <span id="profileCoinsText" class="text-sm sm:text-base font-black text-amber-500">0 🪙</span>
-                            </div>
-                            <div class="p-3 sm:p-4 rounded-2xl glass-panel text-center">
-                                <span class="text-[10px] text-slate-400 block mb-1">Total XP</span>
-                                <span id="profileXpText" class="text-sm sm:text-base font-black text-brand-500">0 XP</span>
-                            </div>
-                            <div class="p-3 sm:p-4 rounded-2xl glass-panel text-center">
-                                <span class="text-[10px] text-slate-400 block mb-1">Quizzes</span>
-                                <span id="profileQuizText" class="text-sm sm:text-base font-black">0</span>
-                            </div>
-                        </div>
-
-                        <!-- Account Deletion Zone -->
-                        <div class="pt-4 border-t border-slate-200 dark:border-slate-800">
+                        <!-- Delete Account -->
+                        <div class="pt-2 border-t border-slate-200 dark:border-slate-800">
                             <button onclick="initiateAccountDeletion()" class="w-full py-3 bg-red-500/10 hover:bg-red-500/20 text-red-500 font-bold rounded-xl text-xs transition-all border border-red-500/20">Delete Account Permanently</button>
                         </div>
                     </div>
@@ -2318,7 +2328,7 @@
             const currentLevelXp = userProfile.xp % 100;
             const percent = Math.min(100, Math.round((currentLevelXp / 100) * 100));
             document.getElementById('xpProgressText').textContent = `${currentLevelXp} / 100 XP`;
-            document.getElementById('xpPercentText').textContent = `${percent}%`;
+            const xpPct = document.getElementById('xpPercentText'); if (xpPct) xpPct.textContent = `${percent}%`;
             document.getElementById('xpProgressBar').style.width = `${percent}%`;
             document.getElementById('profileLevelText').textContent = `Level ${userProfile.level}`;
             document.getElementById('profileXpText').textContent = `${userProfile.xp} XP`;
@@ -6323,6 +6333,52 @@ setTimeout(function(){ try{ addFlashCancelButtonsV092(); fixGeminiLeakV092(); en
   syncBeforeCloseV092=syncBeforeCloseFixedV092; window.syncBeforeCloseV092=syncBeforeCloseFixedV092;
   try{ if(typeof applyCloudDataV092==='function'){ var origApply=applyCloudDataV092; var newApply=async function(val){ var r=await origApply(val); try{ if(window._sfChecksumMismatchV092){ window._sfChecksumMismatchV092=false; if(typeof saveUserFixedV092==='function'){ setTimeout(function(){ saveUserFixedV092(); },1500); } } }catch(err){} return r; }; applyCloudDataV092=newApply; window.applyCloudDataV092=newApply; } }catch(err){}
 })();
+</script>
+
+
+<!-- Edit Profile Modal -->
+    <div id="editProfileModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4">
+        <div class="glass-panel p-6 sm:p-8 rounded-3xl w-full max-w-md shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between">
+                <h3 class="font-bold text-sm">Edit Profile</h3>
+                <button type="button" onclick="closeEditProfileModal()" class="text-slate-400 hover:text-slate-100 text-xs"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="space-y-2">
+                <label class="block text-xs font-semibold text-slate-400">Profile Picture</label>
+                <div class="flex items-center gap-3">
+                    <div id="editProfilePfpPreview" class="w-14 h-14 rounded-2xl bg-brand-500/20 bg-cover bg-center border border-brand-500 flex items-center justify-center text-brand-500 text-lg flex-shrink-0"><i class="fa-solid fa-user"></i></div>
+                    <input type="file" id="editProfilePfpInput" accept="image/*" onchange="previewEditProfilePfp(event)" class="text-xs text-slate-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-brand-500/10 file:text-brand-500">
+                </div>
+            </div>
+            <div class="space-y-2">
+                <label class="block text-xs font-semibold text-slate-400">Username</label>
+                <input type="text" id="editProfileUsername" class="w-full px-3 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-900 border text-xs">
+            </div>
+            <div class="space-y-2">
+                <label class="block text-xs font-semibold text-slate-400">Password</label>
+                <input type="password" id="editProfilePassword" class="w-full px-3 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-900 border text-xs" placeholder="Leave blank to keep current">
+                <p id="editProfilePasswordStatus" class="text-[10px] text-slate-400"></p>
+            </div>
+            <div class="space-y-2">
+                <label class="block text-xs font-semibold text-slate-400">About</label>
+                <textarea id="editProfileAbout" rows="3" class="w-full px-3 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-900 border text-xs"></textarea>
+            </div>
+            <div class="space-y-2">
+                <label class="block text-xs font-semibold text-slate-400">Website / Social Link</label>
+                <input type="url" id="editProfileWebsite" class="w-full px-3 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-900 border text-xs" placeholder="https://...">
+            </div>
+            <div class="flex gap-2 pt-2">
+                <button type="button" onclick="closeEditProfileModal()" class="flex-1 py-2.5 rounded-xl bg-slate-200 dark:bg-slate-800 text-xs font-bold">Cancel</button>
+                <button type="button" onclick="confirmEditProfile()" class="flex-1 py-2.5 rounded-xl bg-brand-500 text-white text-xs font-bold">Confirm</button>
+            </div>
+        </div>
+    </div>
+<script>
+let _editProfilePendingPfp=null;
+function openEditProfileModal(){const m=document.getElementById('editProfileModal');if(m)m.classList.remove('hidden');document.getElementById('editProfileUsername').value=currentUser||'';document.getElementById('editProfileAbout').value=userProfile.about||'';document.getElementById('editProfileWebsite').value=userProfile.website||'';document.getElementById('editProfilePassword').value='';const p=document.getElementById('editProfilePfpPreview');if(userProfile.pfp){p.style.backgroundImage=`url(${userProfile.pfp})`;p.innerHTML='';}else{p.style.backgroundImage='';p.innerHTML='<i class="fa-solid fa-user"></i>';}_editProfilePendingPfp=null;const last=parseInt(localStorage.getItem('studyforge_password_last_change')||'0',10)||0;const now=Date.now();const T=3*86400000;const st=document.getElementById('editProfilePasswordStatus');const pe=document.getElementById('editProfilePassword');if(last&&(now-last)<T){const left=Math.ceil((T-(now-last))/86400000);st.textContent=`Password change available in ~${left} day(s).`;pe.disabled=true;}else{st.textContent='You can change password now (once / 3 days).';pe.disabled=false;}}
+function closeEditProfileModal(){document.getElementById('editProfileModal').classList.add('hidden');_editProfilePendingPfp=null;}
+function previewEditProfilePfp(e){const f=e.target.files[0];if(!f)return;const gif=f.type==='image/gif'||f.name.toLowerCase().endsWith('.gif');if(gif&&(!userProfile.unlockedItems||!userProfile.unlockedItems.gif)){alert('GIF PFP needs shop unlock');e.target.value='';return;}const r=new FileReader();r.onload=ev=>{_editProfilePendingPfp=ev.target.result;const p=document.getElementById('editProfilePfpPreview');p.style.backgroundImage=`url(${_editProfilePendingPfp})`;p.innerHTML='';};r.readAsDataURL(f);}
+async function confirmEditProfile(){const nu=document.getElementById('editProfileUsername').value.trim();const na=document.getElementById('editProfileAbout').value.trim();const nw=document.getElementById('editProfileWebsite').value.trim();const np=document.getElementById('editProfilePassword').value.trim();if(!nu){alert('Username required');return;}if(nu!==currentUser){currentUser=nu;localStorage.setItem('studyforge_session',currentUser);const d=document.getElementById('profileUsernameDisplay');if(d)d.textContent=currentUser;}userProfile.about=na;userProfile.website=nw;if(_editProfilePendingPfp)userProfile.pfp=_editProfilePendingPfp;if(np){const last=parseInt(localStorage.getItem('studyforge_password_last_change')||'0',10)||0;const now=Date.now();const T=3*86400000;if(last&&(now-last)<T){alert('Password only once every 3 days');}else{currentUserPlainPass=np;localStorage.setItem('studyforge_plain_pass',currentUserPlainPass);localStorage.setItem('studyforge_password_last_change',String(now));}}try{await saveAccountData();}catch(e){}try{if(typeof saveUserToServerV092==='function')await saveUserToServerV092();}catch(e){}try{applyUserPfp();}catch(e){}try{if(typeof updateStats==='function')updateStats();}catch(e){}try{if(typeof showToastV092==='function')showToastV092('Profile updated & synced','success');}catch(e){alert('Saved');}closeEditProfileModal();}
 </script>
 
 </body>
