@@ -2,7 +2,7 @@
 <html lang="en" id="htmlRoot" class="dark">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
     <title>StudyForge</title>
     <link rel="icon" type="image/png" href="StudyForge_Icon.png">
     <!-- Tailwind CSS CDN -->
@@ -122,10 +122,38 @@
 
 
 <style id="layout-fix-v092">
-  /* V0.92: sidebar sticky like V0.79, no gap between sidebar and content */
-  html,body{ box-sizing:border-box; }
-  *,*::before,*::after{ box-sizing:border-box; }
-  #appContainer{ display:flex; flex-direction:column; width:100%; min-height:100vh; }
+  /* V0.92: sidebar sticky like V0.79, no gap between sidebar and content + mobile overflow fix (sticky preserved) */
+  html, body {
+    box-sizing: border-box;
+  }
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+  #appContainer {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    min-height: 100vh;
+  }
+  /* Mobile-only overflow guard — does NOT touch desktop sticky */
+  @media (max-width: 767px) {
+    html, body {
+      overflow-x: hidden !important;
+      max-width: 100vw;
+      width: 100%;
+    }
+    #appContainer,
+    header,
+    nav,
+    main,
+    .glass-panel {
+      max-width: 100vw;
+      overflow-x: hidden;
+    }
+    .flex, .grid {
+      max-width: 100%;
+    }
+  }
   @media (min-width: 768px) {
     /* Keep layout as flex row; sidebar sticky and full height, flush with content */
     #appContainer > .flex {
@@ -143,7 +171,7 @@
     aside.sticky::-webkit-scrollbar { width: 0; height: 0; }
     aside.sticky { scrollbar-width: none; }
   }
-  .glass-panel{ max-width:100%; }
+  .glass-panel { max-width: 100%; }
 </style>
 
 <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
@@ -673,16 +701,8 @@
 
                 <!-- TAB: QUIZZES -->
                 <div id="content-quizzes" class="hidden space-y-6">
-                    <div class="p-4 rounded-2xl bg-slate-100/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 space-y-3 mt-2" id="quizModeSelectorV092">
-  <h4 class="font-bold text-xs uppercase tracking-widest text-slate-400">Choose Mode — Quiz</h4>
-  
-  <div class="grid grid-cols-2 gap-2">
-    <button onclick="startQuizModeV092('test')" class="px-3 py-2.5 rounded-xl bg-brand-500 text-white text-xs font-bold">Test — No Hints</button>
-    <button onclick="startQuizModeV092('practice')" class="px-3 py-2.5 rounded-xl bg-amber-500 text-white text-xs font-bold">Practice — With Hints</button>
-  </div>
-  <p id="quizModeStatusV092" class="text-[11px] text-slate-400"></p>
-  
-</div>
+                    <!-- Mode selector moved to popup (like flashcards) -->
+                    <div id="quizModeSelectorV092" class="hidden"></div>
 
 <div class="glass-panel p-6 sm:p-8 rounded-3xl shadow-xl max-w-xl mx-auto space-y-6 text-center">
                             <div id="quizStartContainer" class="space-y-4">
@@ -997,6 +1017,9 @@
                             <a href="https://rewards.bing.com/welcome?rh=7rPckSSimXA&ref=rafsrchae" target="_blank" rel="noopener" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-sm flex items-center justify-center space-x-2 shadow-lg transition-all">
                                 <i class="fa-solid fa-medal"></i><span>Microsoft Rewards</span>
                             </a>
+                            <a href="https://discord.gg/M4YAmjVSEb" target="_blank" rel="noopener" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-sm flex items-center justify-center space-x-2 shadow-lg transition-all">
+                                <i class="fa-brands fa-discord"></i><span>Discord</span>
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -1307,6 +1330,7 @@
             <div class="space-y-3">
                 <a href="#" target="_blank" class="w-full py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-xs flex items-center justify-center space-x-2 shadow-lg shadow-red-600/20 transition-all"><i class="fa-brands fa-youtube text-sm"></i><span>YouTube</span></a>
                 <a href="#" target="_blank" class="w-full py-3 bg-slate-900 hover:bg-black text-white font-bold rounded-xl text-xs flex items-center justify-center space-x-2 shadow-lg transition-all border border-slate-700"><i class="fa-brands fa-tiktok text-sm"></i><span>TikTok</span></a>
+                <a href="https://discord.gg/M4YAmjVSEb" target="_blank" rel="noopener" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs flex items-center justify-center space-x-2 shadow-lg transition-all"><i class="fa-brands fa-discord text-sm"></i><span>Discord</span></a>
             </div>
         </div>
     </div>
@@ -1334,13 +1358,15 @@
              </div>
              <!-- QUIZ SECTION -->
              <div id="preGenQuizSection" class="hidden space-y-4">
-                 <div class="w-12 h-12 bg-brand-500/20 text-brand-500 rounded-2xl mx-auto flex items-center justify-center text-lg"><i class="fa-solid fa-circle-question"></i></div>
-                 <h3 class="font-bold text-sm">Start Quiz Challenge?</h3>
-                 <p class="text-[11px] text-slate-400">Generate a quiz from your materials.</p>
-                 <div class="grid grid-cols-2 gap-3">
-                     <button onclick="closePreGenModal(); executeGeneration();" class="py-2.5 bg-brand-500 hover:bg-brand-600 text-white font-bold rounded-xl text-xs transition-all">Generate Quiz</button>
-                     <button onclick="closePreGenModal()" class="py-2.5 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 font-bold rounded-xl text-xs transition-all text-slate-800 dark:text-slate-100">Cancel</button>
+                 <div class="w-12 h-12 bg-brand-500/20 text-brand-500 rounded-2xl mx-auto flex items-center justify-center text-lg"><i class="fa-solid fa-brain"></i></div>
+                 <h3 class="font-bold text-base">Choose Mode - Quiz</h3>
+                 <div class="grid grid-cols-2 gap-2">
+                     <button id="quizModeBtn-test" onclick="selectQuizModeV092('test')" class="py-2.5 px-2 rounded-xl bg-brand-500 text-white text-xs font-bold transition-all">Test — No Hints</button>
+                     <button id="quizModeBtn-practice" onclick="selectQuizModeV092('practice')" class="py-2.5 px-2 rounded-xl bg-amber-500 text-white text-xs font-bold transition-all">Practice — With Hints</button>
                  </div>
+                 <p id="quizModeExplainV092" class="text-[11px] text-slate-400 leading-relaxed min-h-[36px]">Pick a mode above to see how it works.</p>
+                 <button onclick="confirmQuizModeAndGenerateV092()" class="w-full py-3 bg-brand-500 hover:bg-brand-600 text-white font-bold rounded-xl text-xs transition-all shadow-md">Start Quiz</button>
+                 <button onclick="closePreGenModal()" class="w-full py-2.5 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-100 font-bold rounded-xl text-xs transition-all">Cancel</button>
              </div>
          </div>
      </div>
@@ -3308,6 +3334,29 @@ Rules:
 
         function answerPreGenRecall(isYes) { closePreGenModal(); executeGeneration(); }
         function closePreGenModal() { document.getElementById('preGenModal').classList.add('hidden'); }
+
+        function selectQuizModeV092(mode) {
+            window._sfQuizModeChoice = mode;
+            const explains = {
+              test: "Test Mode: No hints. Pure challenge — answer without AI help.",
+              practice: "Practice Mode: With hints. You can request an AI tip on each question."
+            };
+            const ex = document.getElementById('quizModeExplainV092');
+            if (ex) ex.textContent = explains[mode] || "";
+            ['test','practice'].forEach(function(m){
+              const b = document.getElementById('quizModeBtn-' + m);
+              if (b) { b.style.outline = (m === mode ? '3px solid #fff' : 'none'); b.style.boxShadow = (m === mode ? '0 0 0 3px #10b981' : 'none'); }
+            });
+            // Also set the actual quiz mode used by the app
+            if (typeof startQuizModeV092 === 'function') startQuizModeV092(mode);
+        }
+        function confirmQuizModeAndGenerateV092() {
+            const mode = window._sfQuizModeChoice;
+            if (!mode) { alert("Pick a mode first — Test (No Hints) or Practice (With Hints)."); return; }
+            closePreGenModal();
+            if (typeof executeGeneration === 'function') executeGeneration();
+        }
+
 
         function executeGeneration() {
             if (pendingPreGenType === 'deck') generateAiFlashcards();
@@ -5653,7 +5702,7 @@ async function loadUserFromServerV092(){ try{ const db=window._sfDB; const auth=
 (function(){
   const _origTrigger = window.triggerPreGenFlow;
   window.triggerPreGenFlow = function(type){
-    if(type==='quiz'){ window._sfPreGenMode='no'; document.getElementById('preGenModal')?.classList.add('hidden'); if(typeof executeGeneration==='function') executeGeneration(); return; }
+    if(type==='quiz'){ window._sfQuizModeChoice = null; const deckSec = document.getElementById('preGenDeckSection'); const quizSec = document.getElementById('preGenQuizSection'); if(deckSec) deckSec.classList.add('hidden'); if(quizSec) quizSec.classList.remove('hidden'); const explain = document.getElementById('quizModeExplainV092'); if(explain) explain.textContent = 'Pick a mode above to see how it works.'; ['test','practice'].forEach(function(m){ const b = document.getElementById('quizModeBtn-' + m); if(b){ b.style.outline='none'; b.style.boxShadow='none'; } }); document.getElementById('preGenModal')?.classList.remove('hidden'); return; }
     if(_origTrigger) return _origTrigger(type);
     document.getElementById('preGenModal')?.classList.remove('hidden');
   };
