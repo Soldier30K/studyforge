@@ -177,6 +177,28 @@
 <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script></head>
 <body id="bodyRoot" class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 min-h-screen font-sans pb-20 md:pb-0 relative">
+<!-- Cloud Save Indicator V093 — fading floppy disk, no green box / no text -->
+<style>
+  #autoSaveIndicatorV092{
+    position:fixed; right:16px; bottom:88px; z-index:9999;
+    width:44px; height:44px; border-radius:14px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:22px; line-height:1;
+    background:rgba(15,23,42,.85); color:#fff;
+    box-shadow:0 8px 24px rgba(0,0,0,.35);
+    backdrop-filter:blur(6px);
+    opacity:0; pointer-events:none;
+    transition:opacity .45s ease;
+  }
+  #autoSaveIndicatorV092.show{ opacity:1; }
+  #autoSaveIndicatorV092 .floppy{ display:inline-block; animation:sfFloppyPulse 1s ease-in-out infinite; }
+  #autoSaveIndicatorV092.done .floppy{ animation:none; }
+  @keyframes sfFloppyPulse{ 0%,100%{ opacity:.35; transform:scale(.92);} 50%{ opacity:1; transform:scale(1.08);} }
+  #autoSaveIndicatorV092.hide{ opacity:0; }
+  @media (min-width:768px){ #autoSaveIndicatorV092{ bottom:20px; } }
+</style>
+<div id="autoSaveIndicatorV092" aria-hidden="true"><span class="floppy">💾</span></div>
+
 
     <!-- FNF Style Animated Side Vertical Stacked Text Overlay (Behind Navbar: z-30) -->
     <div id="fnfSideBanner" class="hidden fixed right-0 top-0 bottom-0 z-30 pointer-events-none flex flex-col items-end justify-start overflow-hidden w-16 sm:w-20 opacity-95 select-none">
@@ -984,6 +1006,21 @@
                                 <p class="text-[11px] text-slate-400">V. 0.92 — 3 Quests + 3 Missions = 3+3. Finish all 6 → 1 hour cooldown → new random 3+3.</p>
                             </div>
                         </div>
+
+                        <!-- MY QUESTS (Custom) V095 -->
+                        <div class="space-y-4 pt-6 border-t border-slate-200 dark:border-slate-800">
+                            <div class="flex items-start justify-between gap-3">
+                                <div>
+                                    <h4 class="font-bold text-xs uppercase tracking-widest text-slate-400">My Quests — Custom</h4>
+                                    <p class="text-[11px] text-slate-400 mt-1">Make your own quest. Manual check-off. Always <b class="text-amber-500">70 Coins</b> + <b class="text-brand-500">70 EXP</b>.</p>
+                                </div>
+                            </div>
+                            <div id="customQuestListV095" class="space-y-3"></div>
+                            <p id="customQuestEmptyV095" class="text-[11px] text-slate-400">No custom quests yet. Tap + to make one.</p>
+                        </div>
+                        <!-- Circle + button -->
+                        <button onclick="openCustomQuestModalV095()" title="Add quest / mission" class="mt-4 w-14 h-14 rounded-full bg-brand-500 hover:bg-brand-600 text-white text-2xl font-black shadow-lg shadow-brand-500/30 flex items-center justify-center transition-all active:scale-95">+</button>
+                        <p class="text-[11px] text-slate-400">Add quest / mission</p>
 <div id="questCooldownView" class="hidden text-center space-y-4 py-8">
                             <div class="w-16 h-16 bg-brand-500/20 text-brand-500 rounded-3xl mx-auto flex items-center justify-center text-2xl">
                                 <i class="fa-solid fa-clock"></i>
@@ -994,6 +1031,7 @@
                         </div>
                     </div>
                 </div>
+
 
                                 
                 <!-- TAB: SUPPORT MY SOCIALS -->
@@ -1072,7 +1110,7 @@
                         <button onclick="generateNotes()" id="noteMakerGenerateBtn" class="w-full py-3.5 bg-brand-500 hover:bg-brand-600 text-white font-bold rounded-2xl text-xs shadow-lg shadow-brand-500/20 transition-all">
                             ✨ Generate / Regenerate Notes
                         </button>
- <button id="noteMakerRegenerateBtn" onclick="regenerateNoteMakerV092()" class="w-full py-3 bg-purple-500 hover:bg-purple-600 text-white font-bold rounded-xl text-sm shadow-lg shadow-purple-500/20 transition-all">🔄 Regenerate — Same Materials, New Version</button>
+ <button id="noteMakerRegenerateBtn" onclick="regenerateNoteMakerV092()" class="hidden w-full py-3 bg-purple-500 hover:bg-purple-600 text-white font-bold rounded-xl text-sm shadow-lg shadow-purple-500/20 transition-all">🔄 Regenerate — Same Materials, New Version</button>
 
                         <!-- Progress Area -->
                         <div id="noteMakerProgress" class="hidden space-y-3 py-4">
@@ -4939,6 +4977,8 @@ ${content}`;
                 noteMakerGeneratedText = plain;
                 output.innerHTML = html;
                 outputWrap.classList.remove('hidden');
+                // V094: only show Regenerate once a note actually exists
+                document.getElementById('noteMakerRegenerateBtn')?.classList.remove('hidden');
 
                 setTimeout(() => {
                     progress.classList.add('hidden');
@@ -5023,6 +5063,7 @@ ${content}`;
     measurementId: "G-3SYMVVPKMP"
   };
   let app=null, auth=null;
+  window._sfFirebaseConfig=firebaseConfig; window._sfFirebaseAppGetter=function(){ return app; };
   try{ app=initializeApp(firebaseConfig); auth=getAuth(app); window._sfAuth=auth; window._sfGoogleProvider=new GoogleAuthProvider(); try{ window._sfDB=getDatabase(app); }catch(e){ console.warn('RTDB init failed', e); } }catch(e){ console.warn("Firebase init failed", e); }
   window.signInWithGoogle = async function(){
     try{
@@ -5307,6 +5348,172 @@ window.answerPreGenMode = function(mode){
   if(typeof executeGeneration==='function') executeGeneration();
 };
 setInterval(()=>{ try{ updateQuestV079UI(); }catch(e){} }, 1000);
+/* ===== Custom Quests V095 ===== */
+function getCustomQuestsV095(){ try{ return JSON.parse(localStorage.getItem('studyforge_custom_quests_v095')||'[]'); }catch(e){ return []; } }
+function saveCustomQuestsV095(list){ try{ localStorage.setItem('studyforge_custom_quests_v095', JSON.stringify(list)); }catch(e){} }
+function escV095(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function openCustomQuestModalV095(){
+  var m=document.getElementById('customQuestModalV095'); if(!m) return;
+  var d=document.getElementById('customQuestDateV095'); if(d && !d.value){ d.value=new Date().toISOString().slice(0,10); }
+  var t=document.getElementById('customQuestTimeV095'); if(t && !t.value){ t.value='19:00'; }
+  m.classList.remove('hidden');
+}
+function closeCustomQuestModalV095(){ document.getElementById('customQuestModalV095')?.classList.add('hidden'); }
+async function askCustomQuestNotifPermissionV095(){
+  try{
+    if(!('Notification' in window)) return;
+    if(Notification.permission==='default'){
+      try{ var p=await Notification.requestPermission(); if(p==='granted'){ try{ sfRegisterPushV096(); }catch(e){} } }catch(e){}
+    }
+  }catch(e){}
+}
+function createCustomQuestV095(){
+  // Ask once, on the Create click (a user gesture) — browsers only allow the prompt from a click/tap.
+  try{ askCustomQuestNotifPermissionV095(); }catch(e){}
+  var title=(document.getElementById('customQuestTitleV095')?.value||'').trim();
+  var desc=(document.getElementById('customQuestDescV095')?.value||'').trim();
+  var date=document.getElementById('customQuestDateV095')?.value||'';
+  var time=document.getElementById('customQuestTimeV095')?.value||'19:00';
+  var snoozeMin=parseInt(document.getElementById('customQuestSnoozeV095')?.value||'30',10);
+  if(!title){ alert('Add a title first.'); return; }
+  if(!date){ alert('Pick a due date.'); return; }
+  var due=new Date(date+'T'+(time||'19:00')).getTime();
+  if(isNaN(due.getTime())){ alert('Invalid due date/time.'); return; }
+  var list=getCustomQuestsV095();
+  list.unshift({ id:'cq_'+Date.now()+'_'+Math.floor(Math.random()*1000), title:title, desc:desc, due:due.getTime(), snoozeMin:snoozeMin, done:false, claimed:false, notified:false, createdAt:Date.now() });
+  saveCustomQuestsV095(list);
+  try{ sfSaveCustomQuestToCloudV096(list[0]); sfRegisterPushV096(); }catch(e){}
+  document.getElementById('customQuestTitleV095').value=''; document.getElementById('customQuestDescV095').value='';
+  closeCustomQuestModalV095(); renderCustomQuestsV095();
+  if(typeof saveAccountData==='function'){ try{ saveAccountData(); }catch(e){} }
+}
+function renderCustomQuestsV095(){
+  var cont=document.getElementById('customQuestListV095'); if(!cont) return;
+  var empty=document.getElementById('customQuestEmptyV095');
+  var list=getCustomQuestsV095();
+  if(empty) empty.style.display=list.length?'none':'';
+  if(!list.length){ cont.innerHTML=''; return; }
+  cont.innerHTML=list.map(function(q){
+    var dueStr=new Date(q.due).toLocaleString([], {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'});
+    var overdue=!q.done && Date.now()>q.due;
+    return '<div class="p-4 rounded-2xl bg-slate-100/50 dark:bg-slate-900/50 border '+(q.done?'border-green-500/40':'border-slate-200 dark:border-slate-800')+'">'
+      +'<div class="flex justify-between gap-2"><div class="min-w-0"><p class="font-bold text-sm truncate">'+escV095(q.title)+'</p>'
+      +(q.desc?'<p class="text-xs text-slate-400 mt-1">'+escV095(q.desc)+'</p>':'')
+      +'<p class="text-[11px] mt-1 '+(overdue?'text-red-500 font-bold':'text-slate-400')+'">Due: '+escV095(dueStr)+(overdue?' • Overdue':'')+(q.done?' • Done':'')+'</p></div>'
+      +'<div class="text-right text-xs shrink-0"><p class="text-amber-500 font-bold">70 Coins</p><p class="text-brand-500">70 EXP</p></div></div>'
+      +'<div class="flex gap-2 mt-3">'
+      +(q.done
+        ?'<span class="flex-1 py-2 text-center rounded-xl bg-green-500/15 text-green-500 text-xs font-bold">✓ Completed</span>'
+        :'<button onclick="completeCustomQuestV095(\''+q.id+'\')" class="flex-1 py-2 rounded-xl bg-brand-500 text-white text-xs font-bold">Complete + Claim</button>'
+         +'<button onclick="snoozeCustomQuestV095(\''+q.id+'\')" class="px-3 py-2 rounded-xl bg-slate-200 dark:bg-slate-800 text-xs font-bold">💤 Snooze</button>')
+      +'<button onclick="deleteCustomQuestV095(\''+q.id+'\')" class="px-3 py-2 rounded-xl bg-red-500/10 text-red-500 text-xs font-bold">Delete</button>'
+      +'</div></div>';
+  }).join('');
+}
+function completeCustomQuestV095(id){
+  var list=getCustomQuestsV095(); var q=list.find(function(x){ return x.id===id; });
+  if(!q || q.done){ alert('Already completed.'); return; }
+  q.done=true; q.claimed=true; saveCustomQuestsV095(list); try{ sfSaveCustomQuestToCloudV096(q); }catch(e){}
+  if(typeof userProfile!=='undefined'){ userProfile.coins=(userProfile.coins||0)+70; userProfile.xp=(userProfile.xp||0)+70; }
+  renderCustomQuestsV095();
+  if(typeof saveAccountData==='function'){ try{ saveAccountData(); }catch(e){} }
+  if(typeof updateStats==='function'){ try{ updateStats(); }catch(e){} }
+  if(typeof showToastV092==='function'){ try{ showToastV092('Custom quest done! +70 Coins & +70 EXP','success'); }catch(e){} }
+  else alert('Done! +70 Coins & +70 EXP');
+}
+function snoozeCustomQuestV095(id){
+  var list=getCustomQuestsV095(); var q=list.find(function(x){ return x.id===id; });
+  if(!q || q.done) return;
+  q.due=Date.now()+(q.snoozeMin||30)*60000; q.notified=false; saveCustomQuestsV095(list); renderCustomQuestsV095(); try{ sfSaveCustomQuestToCloudV096(q); }catch(e){}
+  if(typeof showToastV092==='function'){ try{ showToastV092('Snoozed for '+(q.snoozeMin||30)+' minutes','warn'); }catch(e){} }
+}
+function deleteCustomQuestV095(id){
+  if(!confirm('Delete this quest?')) return;
+  saveCustomQuestsV095(getCustomQuestsV095().filter(function(x){ return x.id!==id; })); try{ sfDeleteCustomQuestFromCloudV096(id); }catch(e){}
+  renderCustomQuestsV095();
+}
+function checkCustomQuestDueV095(){
+  var list=getCustomQuestsV095(); var changed=false;
+  list.forEach(function(q){
+    if(!q.done && !q.notified && Date.now()>=q.due){
+      q.notified=true; changed=true;
+      var msg='Quest due: '+q.title;
+      if(typeof showToastV092==='function'){ try{ showToastV092(msg,'warn'); }catch(e){} }
+      try{ if('Notification' in window && Notification.permission==='granted'){ new Notification('StudyForge — Quest Due', { body: q.title }); } }catch(e){}
+      // in-web notification (falls back to toast if no notification store)
+      try{ if(typeof notifications!=='undefined' && Array.isArray(notifications)){ notifications.unshift({ title:'Quest due', text:q.title, at:Date.now(), read:false }); try{ localStorage.setItem('studyforge_notifications', JSON.stringify(notifications)); }catch(e){} } }catch(e){}
+    }
+  });
+  if(changed) saveCustomQuestsV095(list);
+}
+setInterval(function(){ try{ checkCustomQuestDueV095(); }catch(e){} }, 30000);
+/* ===== Push Notifications (FCM) V096 — works even when tab is closed =====
+   YOU must paste your VAPID key below (Firebase Console > Cloud Messaging > Web Push certificates).
+   Without it, getToken() fails and push falls back to in-tab notifications only. */
+window._SF_VAPID_KEY = "PASTE_YOUR_VAPID_KEY_HERE";
+async function sfGetIdTokenV096(){
+  try{ var u=window._sfAuth && window._sfAuth.currentUser; if(!u) return null; return await u.getIdToken(); }catch(e){ return null; }
+}
+function sfRtdbUrlV096(path){
+  return "https://studyforge-d79bc-default-rtdb.asia-southeast1.firebasedatabase.app/" + path + ".json";
+}
+async function sfSaveCustomQuestToCloudV096(q){
+  try{
+    var u=window._sfAuth && window._sfAuth.currentUser; if(!u) return;
+    var tok=await sfGetIdTokenV096(); if(!tok) return;
+    var safeId=String(q.id).replace(/[^a-zA-Z0-9_-]/g,'_');
+    await fetch(sfRtdbUrlV096("users/"+u.uid+"/customQuests/"+safeId)+"?auth="+encodeURIComponent(tok), { method:'PUT', body: JSON.stringify(q) });
+  }catch(e){}
+}
+async function sfDeleteCustomQuestFromCloudV096(id){
+  try{
+    var u=window._sfAuth && window._sfAuth.currentUser; if(!u) return;
+    var tok=await sfGetIdTokenV096(); if(!tok) return;
+    var safeId=String(id).replace(/[^a-zA-Z0-9_-]/g,'_');
+    await fetch(sfRtdbUrlV096("users/"+u.uid+"/customQuests/"+safeId)+"?auth="+encodeURIComponent(tok), { method:'DELETE' });
+  }catch(e){}
+}
+async function sfRegisterPushV096(){
+  try{
+    if(!('serviceWorker' in navigator) || !('Notification' in window)) return null;
+    if(!window._SF_VAPID_KEY || window._SF_VAPID_KEY.indexOf('PASTE_')===0){
+      console.warn('[StudyForge] Push: paste your VAPID key into _SF_VAPID_KEY to enable closed-tab push.');
+      return null;
+    }
+    if(Notification.permission!=='granted') return null;
+    var reg=await navigator.serviceWorker.register('firebase-messaging-sw.js');
+    var mod=await import("https://www.gstatic.com/firebasejs/13.2.0/firebase-messaging.js");
+    var app=window._sfFirebaseAppGetter ? window._sfFirebaseAppGetter() : null;
+    if(!app){ console.warn('[StudyForge] Push: Firebase app not ready yet.'); return null; }
+    var messaging=mod.getMessaging(app);
+    var token=await mod.getToken(messaging, { vapidKey: window._SF_VAPID_KEY, serviceWorkerRegistration: reg });
+    if(!token) return null;
+    // Save token to Firebase so the Cloud Function knows where to send pushes
+    try{
+      var u=window._sfAuth && window._sfAuth.currentUser;
+      if(u){
+        var idTok=await sfGetIdTokenV096();
+        var safeTok=token.replace(/[^a-zA-Z0-9]/g,'').slice(-32);
+        await fetch(sfRtdbUrlV096("users/"+u.uid+"/pushTokens/"+safeTok)+"?auth="+encodeURIComponent(idTok), {
+          method:'PUT', body: JSON.stringify({ token: token, platform: 'web', updatedAt: Date.now() })
+        });
+      }
+    }catch(e){}
+    // Foreground messages (tab open) — show via existing toast system
+    try{ mod.onMessage(messaging, function(payload){
+      var title=(payload && payload.notification && payload.notification.title) || 'StudyForge — Quest Due';
+      var body=(payload && payload.notification && payload.notification.body) || '';
+      if(typeof showToastV092==='function'){ try{ showToastV092(title+': '+body,'warn'); }catch(e){} }
+    }); }catch(e){}
+    return token;
+  }catch(e){ console.warn('[StudyForge] Push register failed:', e); return null; }
+}
+// Hook into quest create/complete/snooze/delete — sync each change to Firebase for the Cloud Function
+var _origCreateV096 = null;
+
+setTimeout(function(){ try{ renderCustomQuestsV095(); checkCustomQuestDueV095(); }catch(e){} }, 800);
+document.addEventListener('DOMContentLoaded', function(){ try{ renderCustomQuestsV095(); }catch(e){} setTimeout(function(){ try{ if('Notification' in window && Notification.permission==='granted') sfRegisterPushV096(); }catch(e){} }, 2000); });
+
 setTimeout(updateQuestV079UI, 800);
 </script>
 <script>document.getElementById("aiTipModal")?.addEventListener("click", e=>{ const t=document.getElementById("aiTipTextContent"); if(t) t.classList.add("revealed"); });</script>
@@ -5651,8 +5858,8 @@ function renderGeminiChatV092(){ const box=document.getElementById('geminiChatMe
 async function sendGeminiChatV092(){ const now=Date.now(); if(now-window._sfChatLastSentV092<8000){ alert("Please wait 8 seconds between messages."); return; } const inp=document.getElementById('geminiChatInputV092'); const text=(inp?.value||'').trim(); if(!text) return; window._sfChatLastSentV092=now; window._sfChatHistoryV092.push({role:'user', text}); if(inp) inp.value=''; renderGeminiChatV092(); const hiddenRules="You are StudyForge Gemini Chat. Rules (hidden, do NOT show): Only answer about materials or current question. If off-topic, say you can only help with this material / this question. In Quiz, give hint, NOT letter answer. Keep same language as material/video, do NOT translate."; const matText=(typeof materials!=='undefined'? materials.map(m=>(m.content||'').slice(0,4000)).join("\n\n").slice(0,12000):''); const curQ=document.getElementById('cardQuestionText')?.textContent||document.getElementById('quizQuestionText')?.textContent||''; try{ const r=await callGeminiApi(hiddenRules+"\nMaterials:\n"+matText+"\nCurrent question:\n"+curQ+"\nUser: "+text); window._sfChatHistoryV092.push({role:'ai', text:r?.text||"No reply."}); }catch(e){ window._sfChatHistoryV092.push({role:'ai', text:"Failed: "+e.message}); } renderGeminiChatV092(); }
 async function signInWithGoogleAuthModalV092(){ const st=document.getElementById('authGoogleStatus'); try{ if(st) st.textContent="Opening Google sign-in..."; const auth=window._sfAuth; if(!auth){ alert("Firebase not ready."); return; } const { signInWithPopup } = await import("https://www.gstatic.com/firebasejs/13.2.0/firebase-auth.js"); let provider=window._sfGoogleProvider; if(!provider){ const { GoogleAuthProvider } = await import("https://www.gstatic.com/firebasejs/13.2.0/firebase-auth.js"); provider=new GoogleAuthProvider(); window._sfGoogleProvider=provider; } const res=await signInWithPopup(auth, provider); const user=res.user; const email=user.email||""; const displayName=user.displayName||email.split('@')[0]||"Student"; if(st) st.textContent="Signed in as "+email; try{ if(typeof userProfile!=='undefined'){ if(!userProfile.username||userProfile.username==="Student") userProfile.username=displayName; userProfile.googleEmail=email; if(typeof saveAccountData==='function') await saveAccountData(); } localStorage.setItem('studyforge_local_gmail', email.toLowerCase()); }catch(e){} document.getElementById('authModal').classList.add('hidden'); const app=document.getElementById('appContainer'); if(app) app.classList.remove('hidden'); try{ if(typeof switchTab==='function') switchTab('overview'); }catch(e){} }catch(e){ if(st) st.textContent="Google sign-in failed: "+e.message; alert("Google sign-in failed: "+e.message); } }
 let _sfAutoSaveInProgress=false; let _sfAutoSaveTimer=null;
-function showAutoSaveIndicatorV092(){ const el=document.getElementById('autoSaveIndicatorV092'); if(!el) return; el.classList.remove('hidden'); el.classList.add('show','saving'); el.style.opacity='1'; el.textContent='💾 Saving...'; }
-function hideAutoSaveIndicatorV092(){ const el=document.getElementById('autoSaveIndicatorV092'); if(!el) return; el.classList.remove('saving'); el.textContent='💾 Saved ✓'; setTimeout(()=>{ el.classList.add('hide'); el.style.opacity='0'; setTimeout(()=>{ el.classList.add('hidden'); el.classList.remove('show','hide'); }, 500); }, 800); }
+function showAutoSaveIndicatorV092(){ const el=document.getElementById('autoSaveIndicatorV092'); if(!el) return; el.classList.remove('hide','done'); el.classList.add('show','saving'); }
+function hideAutoSaveIndicatorV092(){ const el=document.getElementById('autoSaveIndicatorV092'); if(!el) return; el.classList.remove('saving'); el.classList.add('done'); setTimeout(()=>{ el.classList.add('hide'); el.classList.remove('show'); setTimeout(()=>{ el.classList.remove('hide','done'); }, 500); }, 800); }
 async function autoSaveV092(){ if(_sfAutoSaveInProgress) return; _sfAutoSaveInProgress=true; showAutoSaveIndicatorV092(); try{ try{ if(typeof saveAccountData==='function') await saveAccountData(); }catch(e){} try{ if(typeof saveUserToServerV092==='function') await saveUserToServerV092(); }catch(e){} }catch(e){} finally{ _sfAutoSaveInProgress=false; hideAutoSaveIndicatorV092(); } }
 function startAutoSaveV092(){ if(_sfAutoSaveTimer) clearInterval(_sfAutoSaveTimer); _sfAutoSaveTimer=setInterval(()=>{ autoSaveV092(); }, 30000); }
 try{ if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', startAutoSaveV092); } else { startAutoSaveV092(); } }catch(e){}
@@ -5998,14 +6205,8 @@ function clearTranscriptInputsV092(){ try{ var b=document.getElementById('transc
 function ensureAutoSaveV092(){
   try{
     if(window._sfAutoSaveStartedV092) return; window._sfAutoSaveStartedV092=true;
-    setInterval(function(){
-      try{
-        var el=document.getElementById('autoSaveIndicatorV092');
-        if(el){ el.classList.add('saving'); el.textContent='Saving...'; }
-        if(typeof saveAllDataV092==='function') saveAllDataV092();
-        setTimeout(function(){ if(el){ el.classList.remove('saving'); el.textContent='Saved'; setTimeout(function(){ el.classList.remove('show'); }, 1200); } }, 800);
-      }catch(e){}
-    }, 30000);
+    // V093: duplicate 30s timer removed — startAutoSaveV092() is the single 30s autosave timer.
+    // ensureAutoSaveV092 now only handles save-on-close.
     window.addEventListener('beforeunload', function(){ try{ if(typeof saveAllDataV092==='function') saveAllDataV092(); if(typeof syncToFirebaseV092==='function') syncToFirebaseV092(); }catch(e){} });
   }catch(e){}
 }
@@ -6429,6 +6630,51 @@ function closeEditProfileModal(){document.getElementById('editProfileModal').cla
 function previewEditProfilePfp(e){const f=e.target.files[0];if(!f)return;const gif=f.type==='image/gif'||f.name.toLowerCase().endsWith('.gif');if(gif&&(!userProfile.unlockedItems||!userProfile.unlockedItems.gif)){alert('GIF PFP needs shop unlock');e.target.value='';return;}const r=new FileReader();r.onload=ev=>{_editProfilePendingPfp=ev.target.result;const p=document.getElementById('editProfilePfpPreview');p.style.backgroundImage=`url(${_editProfilePendingPfp})`;p.innerHTML='';};r.readAsDataURL(f);}
 async function confirmEditProfile(){const nu=document.getElementById('editProfileUsername').value.trim();const na=document.getElementById('editProfileAbout').value.trim();const nw=document.getElementById('editProfileWebsite').value.trim();const np=document.getElementById('editProfilePassword').value.trim();if(!nu){alert('Username required');return;}if(nu!==currentUser){currentUser=nu;localStorage.setItem('studyforge_session',currentUser);const d=document.getElementById('profileUsernameDisplay');if(d)d.textContent=currentUser;}userProfile.about=na;userProfile.website=nw;if(_editProfilePendingPfp)userProfile.pfp=_editProfilePendingPfp;if(np){const last=parseInt(localStorage.getItem('studyforge_password_last_change')||'0',10)||0;const now=Date.now();const T=3*86400000;if(last&&(now-last)<T){alert('Password only once every 3 days');}else{currentUserPlainPass=np;localStorage.setItem('studyforge_plain_pass',currentUserPlainPass);localStorage.setItem('studyforge_password_last_change',String(now));}}try{await saveAccountData();}catch(e){}try{if(typeof saveUserToServerV092==='function')await saveUserToServerV092();}catch(e){}try{applyUserPfp();}catch(e){}try{if(typeof updateStats==='function')updateStats();}catch(e){}try{if(typeof showToastV092==='function')showToastV092('Profile updated & synced','success');}catch(e){alert('Saved');}closeEditProfileModal();}
 </script>
+
+
+                <!-- Custom Quest Maker Popup V095 -->
+                <div id="customQuestModalV095" class="hidden fixed inset-0 z-[9999] flex items-center justify-center p-4">
+                    <div class="fixed inset-0 bg-black/60" onclick="closeCustomQuestModalV095()"></div>
+                    <div class="relative w-full max-w-sm max-h-[85vh] overflow-y-auto bg-white dark:bg-slate-900 rounded-3xl shadow-2xl p-4 sm:p-5 space-y-3">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-base font-black">New Quest / Mission</h3>
+                            <button onclick="closeCustomQuestModalV095()" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 font-bold">✕</button>
+                        </div>
+                        <div class="space-y-2">
+                            <label class="block text-xs font-semibold text-slate-400">Title *</label>
+                            <input id="customQuestTitleV095" type="text" maxlength="80" placeholder="e.g. Read Biology chapter 3" class="w-full px-3 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-sm focus:outline-none focus:border-brand-500">
+                        </div>
+                        <div class="space-y-2">
+                            <label class="block text-xs font-semibold text-slate-400">Description</label>
+                            <textarea id="customQuestDescV095" rows="2" maxlength="300" placeholder="What do you need to do?" class="w-full px-3 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-sm focus:outline-none focus:border-brand-500"></textarea>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div class="space-y-2">
+                                <label class="block text-xs font-semibold text-slate-400">Due date</label>
+                                <input id="customQuestDateV095" type="date" class="w-full px-3 py-3 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-sm">
+                            </div>
+                            <div class="space-y-2">
+                                <label class="block text-xs font-semibold text-slate-400">Due time</label>
+                                <input id="customQuestTimeV095" type="time" class="w-full px-3 py-3 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-sm">
+                            </div>
+                        </div>
+                        <div class="space-y-2">
+                            <label class="block text-xs font-semibold text-slate-400">Snooze</label>
+                            <select id="customQuestSnoozeV095" class="w-full px-3 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-sm">
+                                <option value="10">Snooze 10 minutes</option>
+                                <option value="30" selected>Snooze 30 minutes</option>
+                                <option value="60">Snooze 1 hour</option>
+                                <option value="1440">Snooze 1 day</option>
+                            </select>
+                            <p class="text-[11px] text-slate-400">Snooze pushes the due date/time forward when you tap Snooze on the quest card.</p>
+                        </div>
+                        <div class="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-center text-sm font-bold">
+                            <span class="text-amber-500">🪙 70 Coins</span> <span class="text-slate-400">+</span> <span class="text-brand-500">70 EXP</span>
+                            <p class="text-[11px] text-slate-400 font-normal mt-0.5">Fixed reward for every custom quest</p>
+                        </div>
+                        <button onclick="createCustomQuestV095()" class="w-full py-3.5 bg-brand-500 hover:bg-brand-600 text-white font-bold rounded-2xl text-sm shadow-lg">Create Quest</button>
+                    </div>
+                </div>
 
 </body>
 
