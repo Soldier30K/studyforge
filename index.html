@@ -350,8 +350,8 @@
                     <i class="fa-solid fa-graduation-cap"></i>
                 </div>
                 <div class="hidden sm:flex flex-col">
-                    <span class="font-extrabold text-base tracking-wide">StudyForge <span class="text-brand-500 text-xs px-2 py-0.5 bg-brand-500/10 rounded-full">AI</span></span>
-                    <span class="text-[10px] font-semibold text-slate-400 -mt-0.5">V. 0.92</span>
+                    <span class="font-extrabold text-base tracking-wide"><span class="text-white">Study</span><span class="text-brand-500">Forge</span></span>
+                    <span class="text-[10px] font-semibold text-slate-400 -mt-0.5">V. 1.04</span>
                 </div>
             </div>
             <div class="flex items-center space-x-2 sm:space-x-3">
@@ -1435,11 +1435,11 @@
 
     <!-- Settings Modal -->
     <div id="settingsModal" class="hidden fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4">
-        <div class="glass-panel p-5 sm:p-6 rounded-3xl w-full max-w-md max-h-[85vh] overflow-y-auto shadow-2xl space-y-5 relative">
+        <div class="glass-panel p-5 sm:p-6 rounded-3xl w-full max-w-4xl max-h-[92vh] overflow-y-auto shadow-2xl space-y-5 relative">
             <button onclick="closeSettingsModal()" class="absolute top-6 right-6 text-slate-400 hover:text-slate-100"><i class="fa-solid fa-xmark"></i></button>
             <h3 class="text-lg font-bold">Settings & Customization
                         <div class="glass-panel p-4 rounded-2xl space-y-3 mt-4">
-                            <h4 class="font-bold text-xs uppercase tracking-widest text-slate-400">Google Account (V. 0.92)</h4>
+                            <h4 class="font-bold text-xs uppercase tracking-widest text-slate-400">Google Account</h4>
                             <p class="text-[11px] text-slate-400">Sign in with Google. If your transfer file contains the same Gmail, we auto-link and transfer your local data.</p>
                             <button id="googleSignInBtn" onclick="signInWithGoogle()" class="w-full px-4 py-2 rounded-xl bg-white border border-slate-300 text-xs font-bold text-slate-700">Sign in with Google</button>
                             <p id="googleStatus" class="text-[11px] text-slate-400">Not signed in with Google.</p>
@@ -1448,23 +1448,23 @@
                         </div>
 </h3>
             
-            <div class="space-y-4">
+            <div class="grid md:grid-cols-2 gap-4">
                 <div>
                     <label class="block text-xs font-semibold mb-1 text-slate-500 dark:text-slate-400">Gemini API Key</label>
                     <input type="password" id="settingsApiKey" onchange="saveApiKey(this.value)" placeholder="AIzaSy..." class="w-full px-4 py-3 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs focus:outline-none focus:border-brand-500">
                      <p class="text-[11px] text-slate-400 mt-1">Synced with your Google account — same key on all devices when you are signed in with Google. It is saved as part of your account data.</p>
                 </div>
-                <div>
-                    <div class="flex justify-between items-center mb-1">
-                        <!-- V107: Close warning setting - own toggle, not Chrome's checkbox -->
-                <div class="flex items-center justify-between gap-3 p-3 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                <!-- V112: Warn setting - own row ABOVE Custom Brand Color -->
+                <div class="flex items-center justify-between gap-3 w-full p-3 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 self-start">
                     <div>
                         <p class="text-xs font-bold">Warn before closing if not saved yet</p>
                         <p class="text-[11px] text-slate-400">Shows "Leave site?" only when a save is running or you changed something since last save. Default ON.</p>
                     </div>
                     <input type="checkbox" id="warnBeforeCloseToggleV107" checked onchange="sfSetWarnBeforeCloseV107(this.checked)" class="w-5 h-5 accent-emerald-500 shrink-0 cursor-pointer">
                 </div>
-                <label class="text-xs font-semibold text-slate-500 dark:text-slate-400">Custom Brand Color</label>
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="text-xs font-semibold text-slate-500 dark:text-slate-400">Custom Brand Color</label>
                         <span id="colorThemeStatus" class="text-[10px]">Shop Locked</span>
                     </div>
                     <input type="color" id="settingsCustomColor" onchange="applyCustomColor(this.value)" value="#10b981" class="w-10 h-10 rounded-xl cursor-pointer bg-transparent border-0">
@@ -1480,7 +1480,7 @@
                 </div>
 
                 <!-- Custom Audio Upload Box -->
-                <div id="customAudioUploadBox" class="hidden glass-panel p-5 rounded-2xl space-y-3 border border-amber-500/30">
+                <div id="customAudioUploadBox" class="hidden glass-panel p-5 rounded-2xl space-y-3 border border-amber-500/30 md:col-span-2">
                     <h4 class="font-bold text-xs text-amber-500">Upload Your Custom Audio (.mp3)</h4>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                         <div class="space-y-1.5">
@@ -1505,7 +1505,7 @@
                     </div>
                 </div>
 
-                <div class="pt-4 border-t border-slate-200 dark:border-slate-800">
+                <div class="pt-4 border-t border-slate-200 dark:border-slate-800 md:col-span-2">
                     <button onclick="clearAppData()" class="w-full py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-500 font-bold rounded-xl text-xs transition-all">Clear Local Cache & Settings</button>
                 </div>
             </div>
@@ -6067,11 +6067,10 @@ function showAutoSaveIndicatorV092(){ const el=document.getElementById('autoSave
 function hideAutoSaveIndicatorV092(){ const el=document.getElementById('autoSaveIndicatorV092'); if(!el) return; el.classList.remove('saving'); el.classList.add('done'); setTimeout(()=>{ el.classList.add('hide'); el.classList.remove('show'); setTimeout(()=>{ el.classList.remove('hide','done'); }, 500); }, 800); }
 async function autoSaveV092(){ if(_sfAutoSaveInProgress) return; _sfAutoSaveInProgress=true; showAutoSaveIndicatorV092(); var _t0=Date.now(); try{ try{ if(typeof saveAccountData==='function') await saveAccountData(); }catch(e){} try{ if(typeof saveUserToServerV092==='function'){ var _p=saveUserToServerV092(); var _timeout=new Promise(function(res){ setTimeout(function(){ res('timeout'); }, 5000); }); await Promise.race([Promise.resolve(_p).catch(function(){ return 'err'; }), _timeout]); } }catch(e){} }catch(e){} finally{ _sfAutoSaveInProgress=false; window._sfLastSaveAt=Date.now(); window._sfDirty=false; hideAutoSaveIndicatorV092(); try{ console.log('[StudyForge] autosave took '+(Date.now()-_t0)+'ms'); }catch(e){} } }
 // V107: Own "Warn before closing" setting - stored in localStorage, default ON
-// This is separate from Chrome's "Prevent additional dialogs" checkbox - ticking that box can't turn this off permanently.
 window._sfWarnBeforeClose = (function(){ try{ var v=localStorage.getItem('studyforge_warn_before_close'); return v===null ? true : v!=='false'; }catch(e){ return true; } })();
 window.sfSetWarnBeforeCloseV107 = function(on){ window._sfWarnBeforeClose = !!on; try{ localStorage.setItem('studyforge_warn_before_close', on ? 'true' : 'false'); }catch(e){} };
 try{ document.addEventListener('DOMContentLoaded', function(){ var el=document.getElementById('warnBeforeCloseToggleV107'); if(el) el.checked = !!window._sfWarnBeforeClose; }); }catch(e){}
-// V107: Stronger warning - also warn if you changed something but autosave hasn't run yet
+// V112: Stronger warning - also warn if you changed something but autosave hasn't run yet
 // _sfDirty = true when you click/type/change anything. Cleared when a save finishes.
 window._sfDirty = false;
 window._sfLastSaveAt = Date.now();
@@ -6080,7 +6079,7 @@ try{
     document.addEventListener(ev, function(){ window._sfDirty = true; }, true);
   });
 }catch(e){}
-// V107: Smart close warning - only warn if a save is actually in progress
+// V112: Smart close warning - only warn if a save is actually in progress
 // Browsers ignore custom text now, they show their own generic "Leave site?" dialog.
 // We only trigger it when _sfAutoSaveInProgress is true, so normal closes have NO popup.
 window.addEventListener('beforeunload', function(e){
