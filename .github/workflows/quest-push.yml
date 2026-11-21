@@ -1,0 +1,62 @@
+# .github/workflows/quest-push.yml
+# GitHub Action trigger - checks due quests every 2 minutes and sends FCM push
+# SETUP (one time):
+# 1. In Firebase Console > Project Settings > Service accounts > Generate new private key
+#    Download the JSON, then in GitHub repo > Settings > Secrets > Actions > New secret
+#    Name: FIREBASE_SERVICE_ACCOUNT  Value: paste the ENTIRE JSON file content
+# 2. Push this file to .github/workflows/quest-push.yml
+# 3. Deploy V103 + firebase-messaging-sw.js to GitHub Pages (same folder / root)
+name: StudyForge Quest Push
+
+on:
+  schedule:
+    - cron: '*/2 * * * *'  # every 2 minutes
+  workflow_dispatch:  # manual test button in Actions tab
+
+jobs:
+  check-due:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install firebase-admin@12
+      - name: Send due quest pushes
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: node -e "
+          const admin = require('firebase-admin');
+          const svc = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+          admin.initializeApp({ credential: admin.credential.cert(svc), databaseURL: 'https://studyforge-d79bc-default-rtdb.asia-southeast1.firebasedatabase.app' });
+          (async () => {
+            const db = admin.database();
+            const snap = await db.ref('users').once('value');
+            const users = snap.val() || {};
+            const now = Date.now();
+            let sent = 0;
+            for (const [uid, u] of Object.entries(users)) {
+              const quests = u.customQuests || {};
+              const tokensObj = u.pushTokens || {};
+              const tokens = Object.values(tokensObj).map(t => t.token || t).filter(Boolean);
+              if (!tokens.length) continue;
+              for (const [qid, q] of Object.entries(quests)) {
+                if (!q || q.done || q.notifiedPush) continue;
+                if (!q.due || q.due > now) continue;
+                // Send to all tokens of this user
+                try {
+                  await admin.messaging().sendEachForMulticast({
+                    tokens,
+                    notification: { title: 'StudyForge — Quest Due', body: q.title || 'Custom Quest' },
+                    data: { questId: String(qid), type: 'quest_due' },
+                    webpush: { notification: { icon: 'StudyForge_Icon.png', tag: 'sf-quest-' + qid } }
+                  });
+                  // Mark as pushed so we don't spam - reset when quest is edited/snoozed in app
+                  await db.ref('users/' + uid + '/customQuests/' + qid + '/notifiedPush').set(true);
+                  sent++;
+                } catch(e) { console.log('send failed', qid, e.message); }
+              }
+            }
+            console.log('Done, sent:', sent);
+          })();
+        "
