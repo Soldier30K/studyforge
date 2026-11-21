@@ -1142,12 +1142,15 @@
                             </div>
 
                             <!-- Bonus Buttons -->
-                            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
                                 <button onclick="alert('Coming Soon')" class="py-2.5 glass-panel hover:bg-slate-200 dark:hover:bg-slate-800 font-bold rounded-xl text-xs transition-all flex items-center justify-center space-x-1.5">
                                     <span>🃏</span><span>Convert to Flashcards</span>
                                 </button>
                                 <button onclick="alert('Coming Soon')" class="py-2.5 glass-panel hover:bg-slate-200 dark:hover:bg-slate-800 font-bold rounded-xl text-xs transition-all flex items-center justify-center space-x-1.5">
                                     <span>❓</span><span>Convert to Quiz</span>
+                                </button>
+                                <button onclick="convertNotesToMindMap()" class="py-2.5 glass-panel hover:bg-slate-200 dark:hover:bg-slate-800 font-bold rounded-xl text-xs transition-all flex items-center justify-center space-x-1.5">
+                                    <span>🧠</span><span>Convert to Mind Map</span>
                                 </button>
                                 <button onclick="downloadNotes()" class="py-2.5 bg-brand-500 hover:bg-brand-600 text-white font-bold rounded-xl text-xs transition-all flex items-center justify-center space-x-1.5">
                                     <span>📥</span><span>Download Notes</span>
@@ -1454,7 +1457,12 @@
                     <input type="password" id="settingsApiKey" onchange="saveApiKey(this.value)" placeholder="AIzaSy..." class="w-full px-4 py-3 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs focus:outline-none focus:border-brand-500">
                      <p class="text-[11px] text-slate-400 mt-1">Synced with your Google account — same key on all devices when you are signed in with Google. It is saved as part of your account data.</p>
                 </div>
-                <!-- V112: Warn setting - own row ABOVE Custom Brand Color -->
+                <div>
+                    <label class="block text-xs font-semibold mb-1 text-slate-500 dark:text-slate-400">OpenAI API Key</label>
+                    <input type="password" id="settingsOpenAiKey" onchange="saveOpenAiKey(this.value)" placeholder="sk-..." class="w-full px-4 py-3 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs focus:outline-none focus:border-brand-500">
+                     <p class="text-[11px] text-slate-400 mt-1">Backup AI. If Gemini fails, the loop tries OpenAI automatically. Saved the same way as your Gemini key.</p>
+                </div>
+                <!-- V115: Warn setting - own row ABOVE Custom Brand Color -->
                 <div class="flex items-center justify-between gap-3 w-full p-3 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 self-start">
                     <div>
                         <p class="text-xs font-bold">Warn before closing if not saved yet</p>
@@ -1557,6 +1565,7 @@
         let materials = [];
         let decks = [];
         let apiKey = '';
+        let openAiKey = '';
 
         let activeReviewDeck = null;
         let currentCardIndex = 0;
@@ -1837,6 +1846,7 @@
             decks = await db.decks.where('username').equals(currentUser).toArray();
             const setDoc = await db.settings.get(currentUser);
             apiKey = setDoc ? setDoc.apiKey || '' : '';
+            openAiKey = setDoc ? setDoc.openAiKey || '' : '';
              // FIX: fill Gender + Birthday inputs from saved profile, otherwise they show Select/empty and wipe each other on next save
              try{ const _g = (userProfile && userProfile.gender) || localStorage.getItem('studyforge_gender') || ''; const _ge = document.getElementById('profileGender'); if(_ge && _g) _ge.value = _g; }catch(e){}
              try{ const _b = (userProfile && userProfile.birthday) || localStorage.getItem('studyforge_birthday') || ''; const _be = document.getElementById('profileBirthday'); if(_be && _b) _be.value = _b; }catch(e){}
@@ -1845,6 +1855,7 @@
             if (typeof loadNotifications === 'function') loadNotifications();
             if (userProfile.customColor) applyCustomColor(userProfile.customColor, false);
             if (apiKey) document.getElementById('settingsApiKey').value = apiKey;
+            if (openAiKey) { var _oai = document.getElementById('settingsOpenAiKey'); if(_oai) _oai.value = openAiKey; }
             applyUserPfp();
             renderSubjectBarChart();
             updateAudioDisplays();
@@ -1860,9 +1871,14 @@
             });
         }
 
-        async function saveApiKey(keyVal) {             apiKey = keyVal.trim();             await db.settings.put({ username: currentUser, apiKey: apiKey });             // API key is account data too — sync it with Google account (Firebase) like profile/materials/decks
+        async function saveApiKey(keyVal) {             apiKey = keyVal.trim();             await db.settings.put({ username: currentUser, apiKey: apiKey, openAiKey: openAiKey });             // API key is account data too — sync it with Google account (Firebase) like profile/materials/decks
              try{ if(typeof saveUserToServerV092 === 'function') await saveUserToServerV092(); }catch(e){}         }
 
+        async function saveOpenAiKey(keyVal) {
+            openAiKey = keyVal.trim();
+            await db.settings.put({ username: currentUser, apiKey: apiKey, openAiKey: openAiKey });
+            try{ if(typeof saveUserToServerV092 === 'function') await saveUserToServerV092(); }catch(e){}
+        }
         function applyTheme(theme) {
             const html = document.getElementById('htmlRoot');
             const sun = document.getElementById('themeSunIcon');
@@ -3594,7 +3610,7 @@ Rules:
         }
 
         async function callGeminiApi(promptText, imageBase64 = null, mimeType = null) {
-            if (!apiKey) throw new Error("API Key is missing.");
+            if (!apiKey && !openAiKey) throw new Error("API Key is missing.");
             const modelVariations = [
                 "gemini-3.8-flash",
                 "gemini-3.7-flash",
@@ -3620,6 +3636,23 @@ Rules:
                         }
                     } catch (err) {
                         console.warn(modelName + ' failed', err);
+                    }
+                }
+                // V115 LOOP: Gemini models all failed this round - try OpenAI before retrying
+                if (openAiKey) {
+                    const openAiModels = ["gpt-4o-mini", "gpt-4o", "gpt-3.5-turbo"];
+                    for (const oaiModel of openAiModels) {
+                        try {
+                            const oaiContent = [{ type: "text", text: promptText }];
+                            if (imageBase64) oaiContent.push({ type: "image_url", image_url: { url: imageBase64 } });
+                            const oaiRes = await fetch("https://api.openai.com/v1/chat/completions", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json", "Authorization": "Bearer " + openAiKey },
+                                body: JSON.stringify({ model: oaiModel, messages: [{ role: "user", content: oaiContent }] })
+                            });
+                            const oaiData = await oaiRes.json();
+                            if (oaiData?.choices?.[0]?.message?.content) return { text: oaiData.choices[0].message.content };
+                        } catch (err) { console.warn(oaiModel + " failed", err); }
                     }
                 }
                 const status=document.getElementById('deckGenStatusText');
@@ -5191,6 +5224,30 @@ ${content}`;
                 .replace(/'/g, "&#039;");
         }
 
+        function convertNotesToMindMap() {
+            if (!noteMakerGeneratedText || !noteMakerGeneratedText.trim()) {
+                alert("Generate notes first, then convert to mind map.");
+                return;
+            }
+            // Feed the generated notes into the mind map source
+            if (typeof mindMapSourceText !== 'undefined') {
+                mindMapSourceText = noteMakerGeneratedText;
+            } else {
+                window.mindMapSourceText = noteMakerGeneratedText;
+            }
+            // Optional: pre-fill the topic field with a short hint
+            const topicEl = document.getElementById('mindMapTopic');
+            if (topicEl && !topicEl.value.trim()) {
+                const firstLine = noteMakerGeneratedText.split('\n').find(l => l.trim().length > 5) || 'Notes';
+                topicEl.value = firstLine.trim().slice(0, 80);
+            }
+            // Switch to Mind Map tab and auto-generate
+            if (typeof switchTab === 'function') switchTab('mindmap');
+            setTimeout(() => {
+                if (typeof generateMindMap === 'function') generateMindMap();
+            }, 300);
+        }
+
         function downloadNotes() {
             if (!noteMakerGeneratedText) {
                 alert("No notes to download yet.");
@@ -5286,7 +5343,8 @@ ${content}`;
       if(data.materials && Array.isArray(data.materials)){ try{ if(window.materials) { data.materials.forEach(m=>{ if(!window.materials.find(x=>x.name===m.name)) window.materials.push(m); }); } }catch(_){} }
       
        // Also restore API key from transfer file (it is in settings / apiKey)
-       try{ const tfKey = (data.settings && data.settings.apiKey) || data.apiKey || ''; if(tfKey){ apiKey = tfKey; try{ if(typeof db !== 'undefined' && typeof currentUser !== 'undefined' && currentUser) await db.settings.put({ username: currentUser, apiKey: tfKey }); }catch(e){} const tfInp = document.getElementById('settingsApiKey'); if(tfInp) tfInp.value = tfKey; } }catch(e){}localStorage.setItem('studyforge_transfer_gmail', fileGmail);
+       try{ const tfKey = (data.settings && data.settings.apiKey) || data.apiKey || ''; if(tfKey){ apiKey = tfKey; try{ if(typeof db !== 'undefined' && typeof currentUser !== 'undefined' && currentUser) await db.settings.put({ username: currentUser, apiKey: tfKey, openAiKey: openAiKey }); }catch(e){} const tfInp = document.getElementById('settingsApiKey'); if(tfInp) tfInp.value = tfKey; } }catch(e){}
+      try{ const tfOai = (data.settings && data.settings.openAiKey) || data.openAiKey || ''; if(tfOai){ openAiKey = tfOai; try{ if(typeof db !== 'undefined' && typeof currentUser !== 'undefined' && currentUser) await db.settings.put({ username: currentUser, apiKey: apiKey, openAiKey: tfOai }); }catch(e){} const tfOaiInp = document.getElementById('settingsOpenAiKey'); if(tfOaiInp) tfOaiInp.value = tfOai; } }catch(e){}localStorage.setItem('studyforge_transfer_gmail', fileGmail);
       localStorage.setItem('studyforge_google_linked', fileGmail);
       document.getElementById('transferStatus').textContent="Transfer complete for "+fileGmail+".";
       if(typeof window.saveAccountData==='function') try{ window.saveAccountData(); }catch(_){}
@@ -6070,7 +6128,7 @@ async function autoSaveV092(){ if(_sfAutoSaveInProgress) return; _sfAutoSaveInPr
 window._sfWarnBeforeClose = (function(){ try{ var v=localStorage.getItem('studyforge_warn_before_close'); return v===null ? true : v!=='false'; }catch(e){ return true; } })();
 window.sfSetWarnBeforeCloseV107 = function(on){ window._sfWarnBeforeClose = !!on; try{ localStorage.setItem('studyforge_warn_before_close', on ? 'true' : 'false'); }catch(e){} };
 try{ document.addEventListener('DOMContentLoaded', function(){ var el=document.getElementById('warnBeforeCloseToggleV107'); if(el) el.checked = !!window._sfWarnBeforeClose; }); }catch(e){}
-// V112: Stronger warning - also warn if you changed something but autosave hasn't run yet
+// V115: Stronger warning - also warn if you changed something but autosave hasn't run yet
 // _sfDirty = true when you click/type/change anything. Cleared when a save finishes.
 window._sfDirty = false;
 window._sfLastSaveAt = Date.now();
@@ -6079,7 +6137,7 @@ try{
     document.addEventListener(ev, function(){ window._sfDirty = true; }, true);
   });
 }catch(e){}
-// V112: Smart close warning - only warn if a save is actually in progress
+// V115: Smart close warning - only warn if a save is actually in progress
 // Browsers ignore custom text now, they show their own generic "Leave site?" dialog.
 // We only trigger it when _sfAutoSaveInProgress is true, so normal closes have NO popup.
 window.addEventListener('beforeunload', function(e){
@@ -6094,12 +6152,12 @@ window.addEventListener('beforeunload', function(e){
 });
 function startAutoSaveV092(){ if(_sfAutoSaveTimer) clearInterval(_sfAutoSaveTimer); _sfAutoSaveTimer=setInterval(()=>{ autoSaveV092(); }, 30000); }
 try{ if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', startAutoSaveV092); } else { startAutoSaveV092(); } }catch(e){}
-async function syncBeforeCloseV092(){ try{ if(typeof saveAccountData==='function'){ const p=saveAccountData(); if(p&&p.catch) p.catch(()=>{}); } }catch(e){} try{ const auth=window._sfAuth; if(auth?.currentUser){ const uid=auth.currentUser.uid; const localStorageData={}; try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k&&k.startsWith('studyforge_')) localStorageData[k]=localStorage.getItem(k); } }catch(e){} const payload={profile:(typeof userProfile!=='undefined'?userProfile:{}), materials:(typeof materials!=='undefined'?materials:[]), decks:(typeof decks!=='undefined'?decks:[]), localStorageData, gmail:(localStorage.getItem('studyforge_local_gmail')||''), settings:{username: currentUser, apiKey: apiKey}, apiKey: apiKey, lastUpdated:Date.now()}; try{ payload.checksum=await computeChecksumV092(payload); }catch(e){} const url="https://studyforge-d79bc-default-rtdb.asia-southeast1.firebasedatabase.app/users/"+uid+".json"; try{ const blob=new Blob([JSON.stringify(payload)], {type:'application/json'}); if(navigator.sendBeacon) navigator.sendBeacon(url, blob); }catch(e){} try{ fetch(url, {method:'PUT', body:JSON.stringify(payload), headers:{'Content-Type':'application/json'}, keepalive:true}).catch(()=>{}); }catch(e){} } }catch(e){} }
+async function syncBeforeCloseV092(){ try{ if(typeof saveAccountData==='function'){ const p=saveAccountData(); if(p&&p.catch) p.catch(()=>{}); } }catch(e){} try{ const auth=window._sfAuth; if(auth?.currentUser){ const uid=auth.currentUser.uid; const localStorageData={}; try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k&&k.startsWith('studyforge_')) localStorageData[k]=localStorage.getItem(k); } }catch(e){} const payload={profile:(typeof userProfile!=='undefined'?userProfile:{}), materials:(typeof materials!=='undefined'?materials:[]), decks:(typeof decks!=='undefined'?decks:[]), localStorageData, gmail:(localStorage.getItem('studyforge_local_gmail')||''), settings:{username: currentUser, apiKey: apiKey, openAiKey: openAiKey}, apiKey: apiKey, openAiKey: openAiKey, lastUpdated:Date.now()}; try{ payload.checksum=await computeChecksumV092(payload); }catch(e){} const url="https://studyforge-d79bc-default-rtdb.asia-southeast1.firebasedatabase.app/users/"+uid+".json"; try{ const blob=new Blob([JSON.stringify(payload)], {type:'application/json'}); if(navigator.sendBeacon) navigator.sendBeacon(url, blob); }catch(e){} try{ fetch(url, {method:'PUT', body:JSON.stringify(payload), headers:{'Content-Type':'application/json'}, keepalive:true}).catch(()=>{}); }catch(e){} } }catch(e){} }
 window.addEventListener('beforeunload', function(){ try{ showAutoSaveIndicatorV092(); setTimeout(function(){ try{ hideAutoSaveIndicatorV092(); }catch(e){} }, 1200); }catch(e){} syncBeforeCloseV092(); });
 window.addEventListener('pagehide', function(){ syncBeforeCloseV092(); });
 document.addEventListener('visibilitychange', function(){ if(document.visibilityState==='hidden') syncBeforeCloseV092(); });
 setInterval(()=>{ try{ updateGeminiChatVisibilityV092(window._sfCurrentTabV092||'overview'); }catch(e){} }, 2000);
-async function saveUserToServerV092(){ try{ const db=window._sfDB; const auth=window._sfAuth; if(!db||!auth?.currentUser) return false; const uid=auth.currentUser.uid; const {set, ref}=await import("https://www.gstatic.com/firebasejs/13.2.0/firebase-database.js"); const localStorageData={}; try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k&&k.startsWith('studyforge_')) localStorageData[k]=localStorage.getItem(k); } }catch(e){} const payload={profile:userProfile||{}, materials:(typeof materials!=='undefined'?materials:[]), decks:(typeof decks!=='undefined'?decks:[]), localStorageData, gmail:(localStorage.getItem('studyforge_local_gmail')||'')||(userProfile?.googleEmail||''), settings:{username: currentUser, apiKey: apiKey}, apiKey: apiKey, lastUpdated:Date.now()}; try{ payload.checksum=await computeChecksumV092(payload); }catch(e){} await set(ref(db, "users/"+uid), payload); return true; }catch(e){ return false; } }
+async function saveUserToServerV092(){ try{ const db=window._sfDB; const auth=window._sfAuth; if(!db||!auth?.currentUser) return false; const uid=auth.currentUser.uid; const {set, ref}=await import("https://www.gstatic.com/firebasejs/13.2.0/firebase-database.js"); const localStorageData={}; try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k&&k.startsWith('studyforge_')) localStorageData[k]=localStorage.getItem(k); } }catch(e){} const payload={profile:userProfile||{}, materials:(typeof materials!=='undefined'?materials:[]), decks:(typeof decks!=='undefined'?decks:[]), localStorageData, gmail:(localStorage.getItem('studyforge_local_gmail')||'')||(userProfile?.googleEmail||''), settings:{username: currentUser, apiKey: apiKey, openAiKey: openAiKey}, apiKey: apiKey, openAiKey: openAiKey, lastUpdated:Date.now()}; try{ payload.checksum=await computeChecksumV092(payload); }catch(e){} await set(ref(db, "users/"+uid), payload); return true; }catch(e){ return false; } }
 async function applyCloudDataV092(val){
   if(!val) return false;
   try{
@@ -6118,13 +6176,16 @@ async function applyCloudDataV092(val){
     }
     if(val.gmail) localStorage.setItem('studyforge_local_gmail', val.gmail.toLowerCase());
      // API key is account data too — restore it from Google cloud (settings + apiKey)
-     try{ const cloudKey = (val.settings && val.settings.apiKey) || val.apiKey || ''; if(cloudKey){ apiKey = cloudKey; try{ if(typeof db !== 'undefined' && currentUser) await db.settings.put({ username: currentUser, apiKey: cloudKey }); }catch(e){} const inp = document.getElementById('settingsApiKey'); if(inp) inp.value = cloudKey; } }catch(e){}
+     try{ const cloudKey = (val.settings && val.settings.apiKey) || val.apiKey || ''; if(cloudKey){ apiKey = cloudKey; try{ if(typeof db !== 'undefined' && currentUser) await db.settings.put({ username: currentUser, apiKey: cloudKey, openAiKey: openAiKey }); }catch(e){} const inp = document.getElementById('settingsApiKey'); if(inp) inp.value = cloudKey; } }catch(e){}
+      // V115: Restore OpenAI key from Gmail cloud too
+      try{ const cloudOai = (val.settings && val.settings.openAiKey) || val.openAiKey || ''; if(cloudOai){ openAiKey = cloudOai; try{ if(typeof db !== 'undefined' && currentUser) await db.settings.put({ username: currentUser, apiKey: apiKey, openAiKey: cloudOai }); }catch(e){} const oaiInp = document.getElementById('settingsOpenAiKey'); if(oaiInp) oaiInp.value = cloudOai; } }catch(e){}
     // Refresh UI
     try{ if(typeof updateStats === 'function') updateStats(); }catch(e){}
     try{ if(typeof renderMaterialList === 'function') renderMaterialList(); }catch(e){}
     try{ if(typeof renderDeckGrid === 'function') renderDeckGrid(); }catch(e){}
     try{ if(typeof renderLeaderboardV092 === 'function') renderLeaderboardV092(); }catch(e){}
-    if(typeof showToastV092 === 'function') showToastV092("Account data restored from cloud.", "success");
+    /* V115: No green pill for cloud restore - use floppy disk only, same as autosave */
+    if(typeof showAutoSaveIndicatorV092 === 'function'){ showAutoSaveIndicatorV092(); setTimeout(function(){ if(typeof hideAutoSaveIndicatorV092 === 'function') hideAutoSaveIndicatorV092(); }, 1200); }
     return true;
   }catch(e){ console.warn("applyCloudData failed", e); return false; }
 }
