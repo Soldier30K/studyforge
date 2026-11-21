@@ -1099,18 +1099,33 @@
                         <!-- Note Type Selector -->
                         <div class="space-y-2">
                             <label class="block text-xs font-semibold text-slate-400">Note Type</label>
-                            <select id="noteMakerType" class="w-full px-4 py-3 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs focus:outline-none focus:border-brand-500">
+                            <select id="noteMakerType" onchange="toggleDetailedConceptOptions()" class="w-full px-4 py-3 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs focus:outline-none focus:border-brand-500">
                                 <option value="outline" selected>Outline Notes</option>
                                 <option value="cornell">Cornell Notes</option>
-                                 <option value="summarize">Summarize</option>
+                                <option value="summarize">Summarize</option>
+                                <option value="detailedconcept">Detailed Concept</option>
                             </select>
+                        </div>
+
+                        <!-- Detailed Concept sub-options -->
+                        <div id="detailedConceptOptions" class="hidden space-y-2 p-4 rounded-2xl bg-slate-100/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800">
+                            <p class="text-[11px] font-semibold text-slate-400">Source mode for Detailed Concept:</p>
+                            <label class="flex items-center gap-2 text-xs cursor-pointer">
+                                <input type="radio" name="detailedSource" value="materials" checked class="accent-brand-500">
+                                Based only on uploaded materials
+                            </label>
+                            <label class="flex items-center gap-2 text-xs cursor-pointer">
+                                <input type="radio" name="detailedSource" value="supplement" class="accent-brand-500">
+                                Supplement with additional knowledge
+                            </label>
+                            <p class="text-[10px] text-slate-400">Regenerate is available but usually produces only slight changes on detailed notes.</p>
                         </div>
 
                         <!-- Generate Button -->
                         <button onclick="generateNotes()" id="noteMakerGenerateBtn" class="w-full py-3.5 bg-brand-500 hover:bg-brand-600 text-white font-bold rounded-2xl text-xs shadow-lg shadow-brand-500/20 transition-all">
                             ✨ Generate / Regenerate Notes
                         </button>
- <button id="noteMakerRegenerateBtn" onclick="regenerateNoteMakerV092()" class="hidden w-full py-3 bg-purple-500 hover:bg-purple-600 text-white font-bold rounded-xl text-sm shadow-lg shadow-purple-500/20 transition-all">🔄 Regenerate — Same Materials, New Version</button>
+ <button id="noteMakerRegenerateBtn" onclick="regenerateNoteMakerV092()" class="hidden w-full py-3 bg-purple-500 hover:bg-purple-600 text-white font-bold rounded-xl text-sm shadow-lg shadow-purple-500/20 transition-all">🔄 Regenerate — Same Materials, New Version<br><span class="text-[10px] font-normal opacity-80">(Detailed notes usually change only slightly)</span></button>
 
                         <!-- Progress Area -->
                         <div id="noteMakerProgress" class="hidden space-y-3 py-4">
@@ -1858,35 +1873,124 @@
 
         
         // ========== NOTIFICATIONS SYSTEM ==========
-        let notifications = [];
+        // V101: Categories + Claimed lock (no infinite rewards)
+        // Categories: Event | Quest | System
+        const SF_NOTIF_CATEGORIES = {
+          'Event':   { label: 'Event',   emoji: '🎃', color: 'bg-purple-500/15 text-purple-500 border-purple-500/30' },
+          'Quest':   { label: 'Quest',   emoji: '⏰', color: 'bg-amber-500/15 text-amber-500 border-amber-500/30' },
+          'System':  { label: 'System',  emoji: '🔔', color: 'bg-slate-500/15 text-slate-400 border-slate-500/30' }
+        };
+        function sfGetClaimedRewards() {
+          try { return JSON.parse(localStorage.getItem('studyforge_claimed_rewards') || '[]'); } catch(e) { return []; }
+        }
+        function sfIsRewardClaimed(id) {
+          if (sfGetClaimedRewards().includes(id)) return true;
+          // Second lock: profile flag survives even if notifications are cleared
+          if (id === 'halloween-thanks' && userProfile && userProfile.halloween && userProfile.halloween.claimed) return true;
+          return false;
+        }
+        function sfMarkRewardClaimed(id) {
+          const list = sfGetClaimedRewards();
+          if (!list.includes(id)) { list.push(id); try { localStorage.setItem('studyforge_claimed_rewards', JSON.stringify(list)); } catch(e) {} }
+          // Persist on profile too (syncs to server via saveAccountData)
+          if (id === 'halloween-thanks') {
+            if (!userProfile.halloween) userProfile.halloween = {};
+            userProfile.halloween.claimed = true;
+            userProfile.halloween.claimedAt = Date.now();
+          }
+        }
+        let notifications = []; window._sfNotifShowAll = false; window._sfNotifFilter = 'All';
 
         function loadNotifications() {
             try {
                 const saved = localStorage.getItem('studyforge_notifications');
                 notifications = saved ? JSON.parse(saved) : [];
             } catch (e) { notifications = []; }
+            // V102: immediate migration for already-saved Halloween notification
+            try { notifications.forEach(n => { if (n && n.id === 'halloween-thanks') n.category = 'Event'; }); } catch(e) {}
+            try { pruneNotifications(); } catch(e) {}
 
-            // Only add Halloween notification if the user actually participated (bought a candle)
-            const participated = !!(userProfile && userProfile.halloween && userProfile.halloween.shopItems && userProfile.halloween.shopItems.candle);
-            const hasHalloween = notifications.some(n => n.id === 'halloween-thanks');
-            if (!hasHalloween && participated) {
+            // V101: Halloween = Event category. If already claimed -> unload/disappear, NEVER re-add.
+            // This is the infinite-reward fix: claimed state lives in localStorage + profile, not in the notification itself.
+            if (sfIsRewardClaimed('halloween-thanks')) {
+              notifications = notifications.filter(n => n.id !== 'halloween-thanks');
+            } else {
+              const participated = !!(userProfile && userProfile.halloween && userProfile.halloween.shopItems && userProfile.halloween.shopItems.candle);
+              const hasHalloween = notifications.some(n => n.id === 'halloween-thanks');
+              if (!hasHalloween && participated) {
                 notifications.push({
-                    id: 'halloween-thanks',
-                    emoji: '🎃',
-                    title: 'Thank You for Participating',
-                    description: 'Click me to claim your rewards',
-                    date: '1/11/2026',
-                    read: false,
-                    claimed: false
+                  id: 'halloween-thanks',
+                  category: 'Event',
+                  emoji: '🎃',
+                  title: 'Thank You for Participating',
+                  description: 'Click to claim +1000 Coins & +1000 EXP',
+                  date: '1/11/2026',
+                  read: false,
+                  claimed: false,
+                  at: Date.now()
                 });
                 saveNotifications();
+              }
             }
             renderNotifications();
         }
 
-        function saveNotifications() {
-            localStorage.setItem('studyforge_notifications', JSON.stringify(notifications));
+        // ===== V098: Lightweight Notifications - cap, dedupe, auto-prune =====
+        const SF_NOTIF_MAX = 50; // hard cap - never store more than this
+        const SF_NOTIF_KEEP_READ_DAYS = 7; // auto-delete read notifs older than 7 days
+        function pruneNotifications() {
+            if (!Array.isArray(notifications)) notifications = [];
+            const now = Date.now();
+            const seen = new Set();
+            const cleaned = [];
+            for (const n of notifications) {
+                if (!n || !n.id) continue;
+                if (seen.has(n.id)) continue; // dedupe - same quest can't spam
+                seen.add(n.id);
+                // V101: Claimed Event reward = unload immediately, never keep it
+                if (n.claimed && n.category === 'Event') continue;
+                if (n.id === 'halloween-thanks' && sfIsRewardClaimed(n.id)) continue;
+                // V102 FIX: migrate old saved notifications - halloween was saved without category, defaulted to System
+                if (n.id === 'halloween-thanks') n.category = 'Event';
+                else if (!n.category || n.category === 'System') {
+                  // Only re-tag if it looks like a quest / event - don't override real System notifs
+                  if (n.id && n.id.startsWith('cq_')) n.category = 'Quest';
+                  else if (!n.category) n.category = 'System';
+                  // If it was wrongly tagged System but title matches Halloween, fix it
+                  if ((n.title || '').toLowerCase().includes('participating') || (n.title || '').toLowerCase().includes('halloween')) n.category = 'Event';
+                }
+                // Drop old read notifications - they are the weight
+                const ts = n.at || n.createdAt || Date.parse(n.date || '') || now;
+                if (n.read && (now - ts) > SF_NOTIF_KEEP_READ_DAYS * 86400000) continue;
+                cleaned.push(n);
+            }
+            // Keep unread first, then newest read - then cut to cap
+            cleaned.sort((a,b) => (a.read - b.read) || ((b.at||0)-(a.at||0)));
+            notifications = cleaned.slice(0, SF_NOTIF_MAX);
         }
+        function saveNotifications() {
+            try { pruneNotifications(); } catch(e) {}
+            try { localStorage.setItem('studyforge_notifications', JSON.stringify(notifications)); } catch(e) {
+                // If storage full/quota - keep only 20 unread/newest and retry once
+                try { notifications = notifications.slice(0, 20); localStorage.setItem('studyforge_notifications', JSON.stringify(notifications)); } catch(e2) {}
+            }
+        }
+        function addNotification(n) {
+            if (!n || !n.id) return false;
+            if (notifications.some(x => x && x.id === n.id)) return false; // already exists - don't duplicate
+            n.at = n.at || Date.now();
+            notifications.unshift(n);
+            saveNotifications();
+            return true;
+        }
+        function clearAllNotifications() {
+            if (notifications.length === 0) return;
+            if (!confirm('Clear all notifications?')) return;
+            // V101: Keep only unclaimed Event rewards - claimed ones are already gone via prune
+            notifications = notifications.filter(n => n.category === 'Event' && !n.claimed && !sfIsRewardClaimed(n.id));
+            saveNotifications(); renderNotifications();
+        }
+
 
         function renderNotifications() {
             const list = document.getElementById('notificationsList');
@@ -1900,43 +2004,70 @@
                 list.innerHTML = '<p class="text-slate-400 text-center py-4">No notifications yet</p>';
                 return;
             }
-
-            list.innerHTML = notifications.map(n => `
-                <div onclick="openNotification('${n.id}')" class="flex items-start gap-3 p-3 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800/50 cursor-pointer transition-all ${n.read ? 'opacity-60' : ''}">
+            // V098: render only first 20 - DOM stays light even if 50 stored
+            // V101: category filter
+            const filtered = window._sfNotifFilter === 'All' ? notifications : notifications.filter(n => (n.category || 'System') === window._sfNotifFilter);
+            const visible = filtered.slice(0, window._sfNotifShowAll ? 50 : 20);
+            // Filter pills - inserted before list
+            const filterBar = document.getElementById('notifFilterBar');
+            if (filterBar) {
+              const cats = ['All','Event','Quest','System'];
+              filterBar.innerHTML = cats.map(c => `<button onclick="window._sfNotifFilter='${c}';window._sfNotifShowAll=false;renderNotifications()" class="px-2.5 py-1 rounded-full text-[10px] font-bold border ${window._sfNotifFilter===c ? 'bg-brand-500 text-white border-brand-500' : 'bg-slate-100 dark:bg-slate-800 text-slate-400 border-slate-200 dark:border-slate-700'}">${c==='All' ? 'All' : (SF_NOTIF_CATEGORIES[c]?.emoji||'')+' '+c} (${c==='All' ? notifications.length : notifications.filter(n=>(n.category||'System')===c).length})</button>`).join('');
+            }
+            if (filtered.length === 0) {
+              list.innerHTML = '<p class="text-slate-400 text-center py-4">No ' + (window._sfNotifFilter==='All' ? '' : window._sfNotifFilter + ' ') + 'notifications</p>';
+              return;
+            }
+            list.innerHTML = visible.map(n => `
+                <div onclick="openNotification('${n.id}')" title="Tap to dismiss" class="group relative flex items-start gap-3 p-3 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800/50 cursor-pointer transition-all ${n.read ? 'opacity-60' : ''}">
                     <div class="text-2xl flex-shrink-0">${n.emoji || '🔔'}</div>
                     <div class="flex-1 min-w-0">
-                        <p class="font-bold text-xs">${n.title}</p>
+                        <div class="flex items-center gap-1.5 flex-wrap"><p class="font-bold text-xs">${n.title}</p><span class="px-1.5 py-0.5 rounded-full text-[9px] font-bold border ${SF_NOTIF_CATEGORIES[n.category||'System']?.color || ''}">${SF_NOTIF_CATEGORIES[n.category||'System']?.emoji || ''} ${n.category || 'System'}</span>${n.category==='Event' && !n.claimed ? '<span class="px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-green-500/15 text-green-500 border border-green-500/30">+1000 🪙 +1000 EXP</span>' : ''}</div>
                         <p class="text-[10px] text-slate-400 truncate">${n.description}</p>
-                        <p class="text-[9px] text-slate-500 mt-0.5">${n.date || ''}</p>
+                        <p class="text-[9px] text-slate-500 mt-0.5">${n.date || ''} • Tap to dismiss</p>
                     </div>
+                    ${n.category==='Event' && !n.claimed ? '' : `<button onclick="dismissNotification('${n.id}', event)" class="absolute top-1 right-1 w-5 h-5 rounded-full bg-slate-200 dark:bg-slate-700 text-[10px] leading-none opacity-0 group-hover:opacity-100 hover:bg-red-500 hover:text-white transition-all" title="Dismiss">✕</button>`}
                 </div>
-            `).join('');
+            `).join('') + (filtered.length > visible.length ? `<button onclick="window._sfNotifShowAll=true;renderNotifications()" class="w-full py-2 text-[11px] font-bold text-brand-500">Show all (${filtered.length})</button>` : '') + `<button onclick="clearAllNotifications()" class="w-full py-2 mt-1 rounded-lg bg-red-500/10 text-red-500 text-[11px] font-bold">Clear all</button>`;
         }
 
         function openNotification(id) {
             const n = notifications.find(x => x.id === id);
             if (!n) return;
 
-            // Mark as read permanently
-            n.read = true;
-            saveNotifications();
-            renderNotifications();
-
-            // Halloween claim
-            if (id === 'halloween-thanks' && !n.claimed) {
-                n.claimed = true;
+            // V101: Halloween claim - check lock FIRST. If already claimed, give NOTHING.
+            if (id === 'halloween-thanks') {
+              if (sfIsRewardClaimed(id) || n.claimed) {
+                alert('Already claimed! This reward can only be claimed once.');
+              } else {
+                sfMarkRewardClaimed(id);
                 userProfile.coins = (userProfile.coins || 0) + 1000;
                 userProfile.xp = (userProfile.xp || 0) + 1000;
-                saveAccountData();
-                updateStats();
+                try { saveAccountData(); } catch(e) {}
+                try { updateStats(); } catch(e) {}
                 if (typeof playCoinsSfx === 'function') playCoinsSfx();
                 alert('🎃 Claimed +1000 Coins & +1000 EXP! Thank you for participating in the Halloween event.');
-                saveNotifications();
+              }
             }
+
+            // V099: Click = Gone. Remove it immediately, don't just mark read.
+            notifications = notifications.filter(x => x.id !== id);
+            saveNotifications();
+            renderNotifications();
 
             // Close panel
             const panel = document.getElementById('notificationsPanel');
             if (panel) panel.classList.add('hidden');
+        }
+        // Also allow swipe / X to dismiss without opening - used by the X button
+        function dismissNotification(id, ev) {
+            if (ev) ev.stopPropagation();
+            // V101: Event rewards can't be X-dismissed - must tap to claim (or it would be lost). Safety.
+            const n = notifications.find(x => x.id === id);
+            if (n && n.category === 'Event' && !n.claimed) { openNotification(id); return; }
+            notifications = notifications.filter(x => x.id !== id);
+            saveNotifications();
+            renderNotifications();
         }
 
         function toggleNotifications() {
@@ -4833,6 +4964,13 @@ ${content.slice(0, 12000)}`;
             event.target.value = "";
         }
 
+
+        function toggleDetailedConceptOptions() {
+            const type = document.getElementById('noteMakerType')?.value;
+            const box = document.getElementById('detailedConceptOptions');
+            if (box) box.classList.toggle('hidden', type !== 'detailedconcept');
+        }
+
         async function generateNotes() {
             const typeEl = document.getElementById('noteMakerType');
             const content = (noteMakerSourceText || '').trim();
@@ -4875,6 +5013,8 @@ ${content.slice(0, 12000)}`;
 
             try {
                 let prompt;
+                const sourceMode = document.querySelector('input[name="detailedSource"]:checked')?.value || 'materials';
+
                 if (noteType === 'cornell') {
                     prompt = `You are a study notes expert. Convert the following study material into Cornell Notes format.
 
@@ -4896,6 +5036,43 @@ Rules:
 
 Study Material:
 ${content}`;
+                } else if (noteType === 'detailedconcept') {
+                    const baseRules = `You are an expert study guide creator. Generate a clear, detailed, adaptive study guide from the material below.
+
+The structure should adapt to the content (do not force a fixed template), but always aim for:
+- Clear explanations of key ideas
+- Useful examples
+- Important points highlighted
+- Student-friendly language
+
+Return ONLY valid JSON (no markdown, no code fences) with this structure:
+{
+  "title": "Descriptive title",
+  "sections": [
+    {
+      "heading": "Section heading",
+      "points": ["Detailed point or explanation"]
+    }
+  ]
+}
+
+Make it detailed enough to study from.`;
+
+                    if (sourceMode === 'supplement') {
+                        prompt = baseRules + `
+
+You MAY add accurate supporting knowledge from general sources when it helps explain the concepts, but keep the core based on the uploaded material.
+
+Study Material:
+${content}`;
+                    } else {
+                        prompt = baseRules + `
+
+Base the guide strictly on the uploaded material. Do not add external facts.
+
+Study Material:
+${content}`;
+                    }
                 } else {
                     prompt = `You are a study notes expert. Convert the following study material into Outline Notes format.
 
@@ -5042,6 +5219,7 @@ ${content}`;
             <h3 class="font-bold text-sm">Notifications</h3>
             <button onclick="toggleNotifications()" class="text-slate-400 hover:text-slate-200 text-xs"><i class="fa-solid fa-xmark"></i></button>
         </div>
+        <div id="notifFilterBar" class="flex gap-1.5 flex-wrap"></div>
         <div id="notificationsList" class="space-y-2 max-h-80 overflow-y-auto text-xs">
             <p class="text-slate-400 text-center py-4">No notifications yet</p>
         </div>
@@ -5377,10 +5555,11 @@ function createCustomQuestV095(){
   var snoozeMin=parseInt(document.getElementById('customQuestSnoozeV095')?.value||'30',10);
   if(!title){ alert('Add a title first.'); return; }
   if(!date){ alert('Pick a due date.'); return; }
-  var due=new Date(date+'T'+(time||'19:00')).getTime();
-  if(isNaN(due.getTime())){ alert('Invalid due date/time.'); return; }
+  var dueDate = new Date(date+'T'+(time||'19:00'));
+  var due = dueDate.getTime();
+  if(isNaN(due)){ alert('Invalid due date/time.'); return; }
   var list=getCustomQuestsV095();
-  list.unshift({ id:'cq_'+Date.now()+'_'+Math.floor(Math.random()*1000), title:title, desc:desc, due:due.getTime(), snoozeMin:snoozeMin, done:false, claimed:false, notified:false, createdAt:Date.now() });
+  list.unshift({ id:'cq_'+Date.now()+'_'+Math.floor(Math.random()*1000), title:title, desc:desc, due:due, snoozeMin:snoozeMin, done:false, claimed:false, notified:false, createdAt:Date.now() });
   saveCustomQuestsV095(list);
   try{ sfSaveCustomQuestToCloudV096(list[0]); sfRegisterPushV096(); }catch(e){}
   document.getElementById('customQuestTitleV095').value=''; document.getElementById('customQuestDescV095').value='';
@@ -5441,7 +5620,25 @@ function checkCustomQuestDueV095(){
       if(typeof showToastV092==='function'){ try{ showToastV092(msg,'warn'); }catch(e){} }
       try{ if('Notification' in window && Notification.permission==='granted'){ new Notification('StudyForge — Quest Due', { body: q.title }); } }catch(e){}
       // in-web notification (falls back to toast if no notification store)
-      try{ if(typeof notifications!=='undefined' && Array.isArray(notifications)){ notifications.unshift({ title:'Quest due', text:q.title, at:Date.now(), read:false }); try{ localStorage.setItem('studyforge_notifications', JSON.stringify(notifications)); }catch(e){} } }catch(e){}
+      try{
+        if(typeof notifications!=='undefined' && Array.isArray(notifications)){
+          var dueStr = new Date(q.due).toLocaleString([], {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'});
+          if (typeof addNotification === 'function') {
+            addNotification({
+              id: 'cq_'+q.id,
+              category: 'Quest',
+              emoji: '⏰',
+              title: 'Quest Due: ' + (q.title || 'Custom Quest'),
+              description: (q.desc || ('Due ' + dueStr)).slice(0, 120),
+              date: dueStr,
+              read: false,
+              claimed: false,
+              at: Date.now()
+            });
+          }
+          if(typeof renderNotifications==='function') renderNotifications();
+        }
+      }catch(e){}
     }
   });
   if(changed) saveCustomQuestsV095(list);
